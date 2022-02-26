@@ -26,6 +26,8 @@ import (
 )
 
 var (
+	Version string
+
 	input  []string
 	output string
 	frames uint
@@ -76,6 +78,14 @@ func init() {
 }
 
 func main() {
+	flag.Usage = func() {
+		header := "Usage of rainbow-roads"
+		if Version != "" {
+			header += " " + Version
+		}
+		fmt.Fprintln(flag.CommandLine.Output(), header+":")
+		flag.PrintDefaults()
+	}
 	flag.Parse()
 	input = flag.Args()
 	if len(input) == 0 {
