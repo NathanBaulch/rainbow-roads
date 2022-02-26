@@ -21,6 +21,9 @@ import (
 	"github.com/StephaneBunel/bresenham"
 	"github.com/kettek/apng"
 	"github.com/schollz/progressbar"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/basicfont"
+	"golang.org/x/image/math/fixed"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
@@ -28,13 +31,14 @@ import (
 var (
 	Version string
 
-	input  []string
-	output string
-	frames uint
-	width  uint
-	height uint
-	format = NewFormatFlag("gif", "png", "zip")
-	colors ColorsFlag
+	input       []string
+	output      string
+	frames      uint
+	width       uint
+	height      uint
+	format      = NewFormatFlag("gif", "png", "zip")
+	colors      ColorsFlag
+	noWatermark bool
 
 	sports        SportsFlag
 	after         DateFlag
@@ -64,6 +68,7 @@ func init() {
 	flag.UintVar(&width, "width", 500, "width of the generated image in pixels")
 	flag.Var(&format, "format", "output file format `string`, supports gif, png, zip")
 	flag.Var(&colors, "colors", "CSS linear-colors inspired color scheme `string`, eg red,yellow@10%,green@20%,blue")
+	flag.BoolVar(&noWatermark, "no_watermark", false, "suppress the embedded project name and version string")
 	flag.Var(&sports, "sport", "sports to include, can be specified multiple times, eg running, cycling")
 	flag.Var(&after, "after", "`date` from which activities should be included")
 	flag.Var(&before, "before", "`date` prior to which activities should be included")
@@ -415,13 +420,42 @@ func render() error {
 	}
 
 	pal := colors.GetPalette(0x100)
+
+	watermark := "NathanBaulch/rainbow-roads"
+	if Version != "" {
+		watermark += " " + Version
+	}
+	bg := image.NewPaletted(image.Rect(0, 0, int(width), int(height)), pal)
+	for i := 0; i < len(bg.Pix); i += bg.Stride {
+		if i == 0 {
+			for j := 0; j < bg.Stride; j++ {
+				bg.Pix[j] = 0xff
+			}
+		} else {
+			copy(bg.Pix[i:i+bg.Stride], bg.Pix[0:bg.Stride])
+		}
+	}
+	if !noWatermark {
+		d := &font.Drawer{
+			Dst:  bg,
+			Src:  image.NewUniform(pal[0x80]),
+			Face: basicfont.Face7x13,
+		}
+		b, _ := d.BoundString(watermark)
+		b = b.Sub(b.Min)
+		if b.In(fixed.R(0, 0, bg.Rect.Max.X-10, bg.Rect.Max.Y-10)) {
+			d.Dot = fixed.P(bg.Rect.Max.X, bg.Rect.Max.Y).
+				Sub(b.Max.Sub(fixed.P(0, basicfont.Face7x13.Height))).
+				Sub(fixed.P(5, 5))
+			d.DrawString(watermark)
+		}
+	}
+
 	ims = make([]*image.Paletted, frames)
 
 	for f := uint(0); f < frames; f++ {
-		im := image.NewPaletted(image.Rect(0, 0, int(width), int(height)), pal)
-		for i := range im.Pix {
-			im.Pix[i] = 0xff
-		}
+		im := image.NewPaletted(bg.Rect, pal)
+		copy(im.Pix, bg.Pix)
 		fp := 1.2 * float64(f+1) / float64(frames)
 		for _, act := range activities {
 			var rprev *record

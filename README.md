@@ -59,6 +59,8 @@ Usage of rainbow-roads:
         shortest distance of included activities, eg 2km
   -min_duration duration
         shortest duration of included activities, eg 15m
+  -no_watermark
+        suppress the embedded project name and version string
   -output string
         optional path of the generated file (default "out")
   -passes_through region
