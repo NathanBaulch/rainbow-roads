@@ -2,6 +2,7 @@ package main
 
 import (
 	"archive/zip"
+	"bytes"
 	"errors"
 	"flag"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"image/jpeg"
 	"io"
 	"io/fs"
+	"io/ioutil"
 	"log"
 	"math"
 	"os"
@@ -155,13 +157,13 @@ func scan() error {
 					if err != nil || d.IsDir() {
 						return err
 					} else {
-						return scanFile(fsys, path, true)
+						return scanFile(fsys, path)
 					}
 				})
 				if err != nil {
 					return err
 				}
-			} else if err := scanFile(fsys, name, true); err != nil {
+			} else if err := scanFile(fsys, name); err != nil {
 				return err
 			}
 		}
@@ -172,23 +174,33 @@ func scan() error {
 	return nil
 }
 
-func scanFile(fsys fs.FS, path string, traverse bool) error {
+func scanFile(fsys fs.FS, path string) error {
 	ext := filepath.Ext(path)
-	if traverse && strings.EqualFold(filepath.Ext(path), ".zip") {
+	if strings.EqualFold(filepath.Ext(path), ".zip") {
 		if f, err := fsys.Open(path); err != nil {
 			return err
 		} else if s, err := f.Stat(); err != nil {
 			return err
-		} else if fsys, err := zip.NewReader(f.(io.ReaderAt), s.Size()); err != nil {
-			return err
 		} else {
-			return fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
-				if err != nil || d.IsDir() {
+			r, ok := f.(io.ReaderAt)
+			if !ok {
+				if b, err := ioutil.ReadAll(f); err != nil {
 					return err
 				} else {
-					return scanFile(fsys, path, false)
+					r = bytes.NewReader(b)
 				}
-			})
+			}
+			if fsys, err := zip.NewReader(r, s.Size()); err != nil {
+				return err
+			} else {
+				return fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
+					if err != nil || d.IsDir() {
+						return err
+					} else {
+						return scanFile(fsys, path)
+					}
+				})
+			}
 		}
 	} else {
 		var parser func(io.Reader) error
