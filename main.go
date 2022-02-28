@@ -61,13 +61,13 @@ var (
 )
 
 func init() {
-	_ = colors.Set("#fff,#ff8@.01,#911@.03,#414@.07,#007@.15,#001")
+	_ = colors.Set("#fff,#ff8,#911,#414,#007@.5,#001")
 
 	flag.StringVar(&output, "output", "out", "optional path of the generated file")
 	flag.UintVar(&frames, "frames", 100, "number of animation frames")
 	flag.UintVar(&width, "width", 500, "width of the generated image in pixels")
 	flag.Var(&format, "format", "output file format `string`, supports gif, png, zip")
-	flag.Var(&colors, "colors", "CSS linear-colors inspired color scheme `string`, eg red,yellow@10%,green@20%,blue")
+	flag.Var(&colors, "colors", "CSS linear-colors inspired color scheme `string`, eg red,yellow,green,blue,black")
 	flag.BoolVar(&noWatermark, "no_watermark", false, "suppress the embedded project name and version string")
 	flag.Var(&sports, "sport", "sports to include, can be specified multiple times, eg running, cycling")
 	flag.Var(&after, "after", "`date` from which activities should be included")
@@ -419,7 +419,10 @@ func render() error {
 		}
 	}
 
-	pal := colors.GetPalette(0x100)
+	pal := color.Palette(make([]color.Color, 0x100))
+	for i := 0; i < 0x100; i++ {
+		pal[i] = colors.GetColorAt(math.Sqrt(float64(i) / float64(0xff)))
+	}
 
 	watermark := "NathanBaulch/rainbow-roads"
 	if Version != "" {

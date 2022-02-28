@@ -37,7 +37,7 @@ func TestFormatSet(t *testing.T) {
 	}
 }
 
-func TestGradientSet(t *testing.T) {
+func TestColorsSet(t *testing.T) {
 	testCases := []struct {
 		set    string
 		expect interface{}
@@ -46,7 +46,7 @@ func TestGradientSet(t *testing.T) {
 		{"#fff,#000", "#fff,#000"},
 		{"#123456,#789abc", "#123456,#789abc"},
 		{"#fff,#888,#000", "#fff,#888@0.5,#000"},
-		{"#fff,#ccc,#666,#000", "#fff,#ccc@0.25,#666@0.5,#000"},
+		{"#fff,#ccc,#666,#333,#000", "#fff,#ccc@0.25,#666@0.5,#333@0.75,#000"},
 		{"#fff,#999@.7,#888,#777,#000", "#fff,#999@0.7,#888@0.8,#777@0.9,#000"},
 		{"#fff,#aaa,#999@.7,#888,#777,#000", "#fff,#aaa@0.35,#999@0.7,#888@0.8,#777@0.9,#000"},
 		{"#fff@.1,#000@.9", "#fff@0.1,#000@0.9"},
@@ -81,19 +81,27 @@ func TestGradientSet(t *testing.T) {
 	}
 }
 
-func TestGradientPalette(t *testing.T) {
+func TestColorsAt(t *testing.T) {
 	g := &ColorsFlag{}
-	if err := g.Set("#fff,#ccc,#888,#444,#000"); err != nil {
+	if err := g.Set("#fff,#ccc,#888,#444,#222,#000"); err != nil {
 		t.Fatal(err)
 	}
-	pal := g.GetPalette(9)
-	if len(pal) != 9 {
-		t.Fatal("palette size:", len(pal), "!= 9")
-	}
-	for i, expect := range []string{"#ffffff", "#cccccc", "#888888", "#656565", "#444444", "#343434", "#242424", "#161616", "#000000"} {
-		actual := pal[i].(colorful.Color).Hex()
+	for p, expect := range map[float64]string{
+		0.0: "#ffffff",
+		0.1: "#e5e5e5",
+		0.2: "#cccccc",
+		0.3: "#a9a9a9",
+		0.4: "#888888",
+		0.5: "#656565",
+		0.6: "#444444",
+		0.7: "#333333",
+		0.8: "#222222",
+		0.9: "#151515",
+		1.0: "#000000",
+	} {
+		actual := g.GetColorAt(p).(colorful.Color).Hex()
 		if actual != expect {
-			t.Fatal("palette entry", i, ":", actual, "!=", expect)
+			t.Fatal("palette color at ", p, ":", actual, "!=", expect)
 		}
 	}
 }

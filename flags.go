@@ -97,13 +97,7 @@ func (g *ColorsFlag) Set(str string) error {
 				missingAt = i
 			}
 		}
-		if i == len(parts)-1 && missingAt == 1 {
-			p := 1.0
-			for j := len(parts) - 2; j > 0; j-- {
-				p /= 2
-				(*g)[j].pos = p
-			}
-		} else if !math.IsNaN(e.pos) && missingAt > 0 {
+		if !math.IsNaN(e.pos) && missingAt > 0 {
 			p := (*g)[missingAt-1].pos
 			step := (e.pos - p) / float64(i+1-missingAt)
 			for j := missingAt; j < i; j++ {
@@ -142,14 +136,6 @@ func (g *ColorsFlag) String() string {
 		}
 	}
 	return strings.Join(parts, ",")
-}
-
-func (g *ColorsFlag) GetPalette(size int) color.Palette {
-	pal := color.Palette(make([]color.Color, size))
-	for i := 0; i < size; i++ {
-		pal[i] = g.GetColorAt(float64(i) / float64(size-1))
-	}
-	return pal
 }
 
 func (g *ColorsFlag) GetColorAt(p float64) color.Color {

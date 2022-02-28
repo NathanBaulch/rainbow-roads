@@ -44,7 +44,7 @@ Usage of rainbow-roads:
   -bounded_by region
         region that activities must be fully contained within, eg -37.8,144.9,10km
   -colors string
-        CSS linear-colors inspired color scheme string, eg red,yellow@10%,green@20%,blue (default #fff,#ff8@0.01,#911@0.03,#414@0.07,#007@0.15,#001)
+        CSS linear-colors inspired color scheme string, eg red,yellow,green,blue,black (default #fff,#ff8,#911,#414,#007@.5,#001)
   -ends_near region
         region that activities must end in, eg 30.06,31.22,1km
   -format string
