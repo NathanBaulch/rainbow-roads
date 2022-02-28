@@ -21,7 +21,7 @@ func semicirclesToRadians(s int32) float64 {
 
 func mercatorMeters(lat, lon float64) (float64, float64) {
 	x := 6_378_137 * lon
-	y := 6_378_137 * math.Log(math.Tan(lat+(math.Pi/4))) / (2 * math.Pi)
+	y := 6_378_137 * math.Log(math.Tan((2*lat+math.Pi)/4))
 	return x, y
 }
 
