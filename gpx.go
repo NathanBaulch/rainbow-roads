@@ -7,6 +7,42 @@ import (
 	"github.com/tkrajina/gpxgo/gpx"
 )
 
+var stravaTypeCodes = map[string]string{
+	"1":  "Cycling",
+	"2":  "AlpineSkiing",
+	"3":  "BackcountrySkiing",
+	"4":  "Hiking",
+	"5":  "IceSkating",
+	"6":  "InlineSkating",
+	"7":  "CrossCountrySkiing",
+	"8":  "RollerSkiing",
+	"9":  "Running",
+	"10": "Walking",
+	"11": "Workout",
+	"12": "Snowboarding",
+	"13": "Snowshoeing",
+	"14": "Kitesurfing",
+	"15": "Windsurfing",
+	"16": "Swimming",
+	"17": "VirtualBiking",
+	"18": "EBiking",
+	"19": "Velomobile",
+	"21": "Paddling",
+	"22": "Kayaking",
+	"23": "Rowing",
+	"24": "StandUpPaddling",
+	"25": "Surfing",
+	"26": "Crossfit",
+	"27": "Elliptical",
+	"28": "RockClimbing",
+	"29": "StairStepper",
+	"30": "WeightTraining",
+	"31": "Yoga",
+	"51": "Handcycling",
+	"52": "Wheelchair",
+	"53": "VirtualRunning",
+}
+
 func parseGPX(r io.Reader) error {
 	buf, err := ioutil.ReadAll(r)
 	if err != nil {
@@ -23,7 +59,11 @@ func parseGPX(r io.Reader) error {
 	}
 
 	for _, t := range g.Tracks {
-		if !includeSport(t.Type) {
+		sport := t.Type
+		if s, ok := stravaTypeCodes[sport]; ok {
+			sport = s
+		}
+		if !includeSport(sport) {
 			continue
 		}
 
