@@ -3,6 +3,7 @@ package main
 import (
 	"archive/zip"
 	"bytes"
+	"compress/gzip"
 	"errors"
 	"flag"
 	"fmt"
@@ -203,6 +204,10 @@ func scanFile(fsys fs.FS, path string) error {
 			}
 		}
 	} else {
+		gz := strings.EqualFold(ext, ".gz")
+		if gz {
+			ext = filepath.Ext(path[:len(path)-3])
+		}
 		var parser func(io.Reader) error
 		if strings.EqualFold(ext, ".fit") {
 			parser = parseFIT
@@ -213,15 +218,25 @@ func scanFile(fsys fs.FS, path string) error {
 		} else {
 			return nil
 		}
-		files = append(files, &file{fsys, path, parser})
+		parse := func() (err error) {
+			var r io.Reader
+			if r, err = fsys.Open(path); err != nil {
+				return
+			} else if gz {
+				if r, err = gzip.NewReader(r); err != nil {
+					return
+				}
+			}
+			return parser(r)
+		}
+		files = append(files, &file{path, parse})
 		return nil
 	}
 }
 
 type file struct {
-	fsys   fs.FS
-	path   string
-	parser func(io.Reader) error
+	path  string
+	parse func() error
 }
 
 func parse() error {
@@ -230,11 +245,7 @@ func parse() error {
 	var warnings []string
 	for _, f := range files {
 		_ = pb.Add(1)
-		r, err := f.fsys.Open(f.path)
-		if err == nil {
-			err = f.parser(r)
-		}
-		if err != nil {
+		if err := f.parse(); err != nil {
 			warnings = append(warnings, fmt.Sprint(f.path, ":", err))
 		}
 	}
