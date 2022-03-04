@@ -20,14 +20,14 @@ func parseTCX(r io.Reader) error {
 
 		for _, l := range a.Laps {
 			if len(l.Track) == 0 ||
-				!includeDate(&l.StartTime) ||
+				!includeDate(l.StartTime) ||
 				!includeDuration(time.Duration(l.TotalTimeInSeconds)*time.Second) ||
 				!includeDistance(l.DistanceInMeters) {
 				continue
 			}
 
 			act := &activity{
-				date:     &l.StartTime,
+				date:     l.StartTime,
 				duration: time.Duration(l.TotalTimeInSeconds) * time.Second,
 				distance: l.DistanceInMeters,
 				records:  make([]*record, 0, len(l.Track)),

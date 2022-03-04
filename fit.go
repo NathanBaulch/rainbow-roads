@@ -18,14 +18,14 @@ func parseFIT(r io.Reader) error {
 
 	if a, err := f.Activity(); err != nil ||
 		len(a.Records) == 0 ||
-		!includeDate(&a.Activity.Timestamp) ||
+		!includeDate(a.Activity.Timestamp) ||
 		!includeSport(a.Sessions[0].Sport.String()) ||
 		!includeDuration(time.Duration(a.Sessions[0].GetTotalTimerTimeScaled())*time.Second) ||
 		!includeDistance(a.Sessions[0].GetTotalDistanceScaled()) {
 		return nil
 	} else {
 		act := &activity{
-			date:     &a.Activity.Timestamp,
+			date:     a.Activity.Timestamp,
 			duration: time.Duration(a.Sessions[0].GetTotalTimerTimeScaled()) * time.Second,
 			distance: a.Sessions[0].GetTotalDistanceScaled(),
 			records:  make([]*record, 0, len(a.Records)),

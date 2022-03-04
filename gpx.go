@@ -55,7 +55,7 @@ func parseGPX(r io.Reader) error {
 		return err
 	}
 
-	if !includeDate(g.Time) {
+	if g.Time != nil && !includeDate(*g.Time) {
 		return nil
 	}
 
@@ -77,12 +77,17 @@ func parseGPX(r io.Reader) error {
 
 			p0, p1 := s.Points[0], s.Points[len(s.Points)-1]
 			act := &activity{
-				date:     g.Time,
 				duration: p1.Timestamp.Sub(p0.Timestamp),
 				records:  make([]*record, len(s.Points)),
 			}
 			if !includeDuration(act.duration) {
 				continue
+			}
+
+			if g.Time != nil {
+				act.date = *g.Time
+			} else {
+				act.date = s.Points[0].Timestamp
 			}
 
 			for i, p := range s.Points {

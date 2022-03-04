@@ -292,13 +292,11 @@ func parse() error {
 			continue
 		}
 
-		if act.date != nil {
-			if minDate.IsZero() || act.date.Before(minDate) {
-				minDate = *act.date
-			}
-			if maxDate.IsZero() || act.date.After(maxDate) {
-				maxDate = *act.date
-			}
+		if minDate.IsZero() || act.date.Before(minDate) {
+			minDate = act.date
+		}
+		if maxDate.IsZero() || act.date.After(maxDate) {
+			maxDate = act.date
 		}
 		if act.duration < minDur {
 			minDur = act.duration
@@ -379,11 +377,11 @@ func includeSport(sport string) bool {
 	return false
 }
 
-func includeDate(date *time.Time) bool {
-	if min := after.Time; !min.IsZero() && (date == nil || min.After(*date)) {
+func includeDate(date time.Time) bool {
+	if !after.Time.IsZero() && after.Time.After(date) {
 		return false
 	}
-	if max := before.Time; !max.IsZero() && (date == nil || max.Before(*date)) {
+	if !before.Time.IsZero() && before.Time.Before(date) {
 		return false
 	}
 	return true
@@ -410,7 +408,7 @@ func includeDistance(distance float64) bool {
 }
 
 type activity struct {
-	date     *time.Time
+	date     time.Time
 	duration time.Duration
 	distance float64
 	records  []*record
