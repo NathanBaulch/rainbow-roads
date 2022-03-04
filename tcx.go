@@ -19,19 +19,22 @@ func parseTCX(r io.Reader) error {
 		}
 
 		for _, l := range a.Laps {
-			if len(l.Track) == 0 ||
-				!includeDate(l.StartTime) ||
-				!includeDuration(time.Duration(l.TotalTimeInSeconds)*time.Second) ||
-				!includeDistance(l.DistanceInMeters) {
+			if len(l.Track) == 0 {
 				continue
 			}
 
 			act := &activity{
+				sport:    a.Sport,
 				date:     l.StartTime,
 				duration: time.Duration(l.TotalTimeInSeconds) * time.Second,
 				distance: l.DistanceInMeters,
-				records:  make([]*record, 0, len(l.Track)),
 			}
+			if !includeDate(act.date) ||
+				!includeDuration(act.duration) ||
+				!includeDistance(act.distance) {
+				continue
+			}
+			act.records = make([]*record, 0, len(l.Track))
 			for _, t := range l.Track {
 				if t.LatitudeInDegrees != 0 && t.LongitudeInDegrees != 0 {
 					act.records = append(act.records, &record{

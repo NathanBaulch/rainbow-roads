@@ -16,20 +16,22 @@ func parseFIT(r io.Reader) error {
 		return err
 	}
 
-	if a, err := f.Activity(); err != nil ||
-		len(a.Records) == 0 ||
-		!includeDate(a.Activity.Timestamp) ||
-		!includeSport(a.Sessions[0].Sport.String()) ||
-		!includeDuration(time.Duration(a.Sessions[0].GetTotalTimerTimeScaled())*time.Second) ||
-		!includeDistance(a.Sessions[0].GetTotalDistanceScaled()) {
+	if a, err := f.Activity(); err != nil || len(a.Records) == 0 {
 		return nil
 	} else {
 		act := &activity{
 			date:     a.Activity.Timestamp,
+			sport:    a.Sessions[0].Sport.String(),
 			duration: time.Duration(a.Sessions[0].GetTotalTimerTimeScaled()) * time.Second,
 			distance: a.Sessions[0].GetTotalDistanceScaled(),
-			records:  make([]*record, 0, len(a.Records)),
 		}
+		if !includeSport(act.sport) ||
+			!includeDate(act.date) ||
+			!includeDuration(act.duration) ||
+			!includeDistance(act.distance) {
+			return nil
+		}
+		act.records = make([]*record, 0, len(a.Records))
 		for _, r := range a.Records {
 			if !r.PositionLat.Invalid() && !r.PositionLong.Invalid() {
 				act.records = append(act.records, &record{

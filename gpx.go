@@ -77,19 +77,20 @@ func parseGPX(r io.Reader) error {
 
 			p0, p1 := s.Points[0], s.Points[len(s.Points)-1]
 			act := &activity{
+				sport:    sport,
 				duration: p1.Timestamp.Sub(p0.Timestamp),
-				records:  make([]*record, len(s.Points)),
 			}
-			if !includeDuration(act.duration) {
-				continue
-			}
-
 			if g.Time != nil {
 				act.date = *g.Time
 			} else {
 				act.date = s.Points[0].Timestamp
 			}
+			if !includeDate(act.date) ||
+				!includeDuration(act.duration) {
+				continue
+			}
 
+			act.records = make([]*record, len(s.Points))
 			for i, p := range s.Points {
 				act.records[i] = &record{
 					ts:  p.Timestamp,

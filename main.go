@@ -18,6 +18,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -258,6 +259,7 @@ func parse() error {
 		return errors.New("no matching activities found")
 	}
 
+	sportStats := make(map[string]int)
 	minDur := time.Duration(math.MaxInt64)
 	var minDate, maxDate time.Time
 	minDist, maxDist := math.MaxFloat64, 0.0
@@ -292,6 +294,11 @@ func parse() error {
 			continue
 		}
 
+		if act.sport == "" {
+			sportStats["unknown"]++
+		} else {
+			sportStats[strings.ToLower(act.sport)]++
+		}
 		if minDate.IsZero() || act.date.Before(minDate) {
 			minDate = act.date
 		}
@@ -333,10 +340,10 @@ func parse() error {
 		}
 	}
 
-	p1, p2 := periodParts(maxDate.Sub(minDate))
 	p := message.NewPrinter(language.English)
 	p.Printf("activities:     %d\n", len(activities))
-	p.Printf("period:         %.1f %s(s) (%s to %s)\n", p1, p2, minDate.Format("2006-01-02"), maxDate.Format("2006-01-02"))
+	p.Printf("sports:         %s\n", sprintSportStats(p, sportStats))
+	p.Printf("period:         %s\n", sprintPeriod(p, minDate, maxDate))
 	p.Printf("duration range: %s to %s\n", minDur, maxDur)
 	p.Printf("distance range: %.1fkm to %.1fkm\n", minDist/1000, maxDist/1000)
 	p.Printf("bounds:         %s\n", &Region{lat, lon, radius})
@@ -346,23 +353,53 @@ func parse() error {
 	return nil
 }
 
-func periodParts(d time.Duration) (float64, string) {
+func sprintSportStats(p *message.Printer, stats map[string]int) string {
+	pairs := make([]struct {
+		k string
+		v int
+	}, len(stats))
+	i := 0
+	for k, v := range stats {
+		pairs[i].k = k
+		pairs[i].v = v
+		i++
+	}
+	sort.Slice(pairs, func(i, j int) bool {
+		p0, p1 := pairs[i], pairs[j]
+		return p0.v > p1.v || (p0.v == p1.v && p0.k < p1.k)
+	})
+	a := make([]interface{}, len(stats)*2)
+	i = 0
+	for _, kv := range pairs {
+		a[i] = kv.k
+		i++
+		a[i] = kv.v
+		i++
+	}
+	return p.Sprintf(strings.Repeat(", %s (%d)", len(stats))[2:], a...)
+}
+
+func sprintPeriod(p *message.Printer, minDate, maxDate time.Time) string {
+	d := maxDate.Sub(minDate)
+	var num float64
+	var unit string
 	switch {
 	case d.Hours() >= 365.25*24:
-		return d.Hours() / (365.25 * 24), "year"
+		num, unit = d.Hours()/(365.25*24), "years"
 	case d.Hours() >= 365.25*2:
-		return d.Hours() / (365.25 * 2), "month"
+		num, unit = d.Hours()/(365.25*2), "months"
 	case d.Hours() >= 7*24:
-		return d.Hours() / (7 * 24), "week"
+		num, unit = d.Hours()/(7*24), "weeks"
 	case d.Hours() >= 24:
-		return d.Hours() / 24, "day"
+		num, unit = d.Hours()/24, "days"
 	case d.Hours() >= 1:
-		return d.Hours(), "hour"
+		num, unit = d.Hours(), "hours"
 	case d.Minutes() >= 1:
-		return d.Minutes(), "minute"
+		num, unit = d.Minutes(), "minutes"
 	default:
-		return d.Seconds(), "second"
+		num, unit = d.Seconds(), "seconds"
 	}
+	return p.Sprintf("%.1f %s (%s to %s)", num, unit, minDate.Format("2006-01-02"), maxDate.Format("2006-01-02"))
 }
 
 func includeSport(sport string) bool {
@@ -408,6 +445,7 @@ func includeDistance(distance float64) bool {
 }
 
 type activity struct {
+	sport    string
 	date     time.Time
 	duration time.Duration
 	distance float64

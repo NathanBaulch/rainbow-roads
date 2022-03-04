@@ -24,7 +24,8 @@ Some basic statistics are output to help validate the activities that were inclu
 activity files: 9,327
  100% |████████████████████████████████████████| [3s:0s]            
 activities:     270
-period:         1.6 year(s) (2020-08-02 to 2022-02-24)
+sports:         running (270)
+period:         1.6 years (2020-08-02 to 2022-02-24)
 duration range: 15m28s to 1h32m39s
 distance range: 3.0km to 16.8km
 bounds:         -37.8,144.9,4987.12259
