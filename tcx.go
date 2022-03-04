@@ -41,7 +41,9 @@ func parseTCX(r io.Reader) error {
 					})
 				}
 			}
-			activities = append(activities, act)
+			if len(act.records) > 0 {
+				activities = append(activities, act)
+			}
 		}
 	}
 
