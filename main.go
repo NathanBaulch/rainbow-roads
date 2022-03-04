@@ -56,6 +56,7 @@ var (
 	passesThrough RegionFlag
 	boundedBy     RegionFlag
 
+	p              = message.NewPrinter(language.English)
 	files          []*file
 	activities     []*activity
 	maxDur         time.Duration
@@ -87,15 +88,23 @@ func init() {
 }
 
 func main() {
+	title := "rainbow-roads"
+	if Version != "" {
+		title += " " + Version
+	}
+
 	flag.Usage = func() {
 		header := "Usage of rainbow-roads"
 		if Version != "" {
 			header += " " + Version
 		}
-		fmt.Fprintln(flag.CommandLine.Output(), header+":")
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", title)
 		flag.PrintDefaults()
 	}
 	flag.Parse()
+
+	p.Println(title)
+
 	input = flag.Args()
 	if len(input) == 0 {
 		input = []string{"."}
@@ -171,7 +180,6 @@ func scan() error {
 		}
 	}
 
-	p := message.NewPrinter(language.English)
 	p.Println("activity files:", len(files))
 	return nil
 }
@@ -340,7 +348,6 @@ func parse() error {
 		}
 	}
 
-	p := message.NewPrinter(language.English)
 	p.Printf("activities:     %d\n", len(activities))
 	p.Printf("sports:         %s\n", sprintSportStats(p, sportStats))
 	p.Printf("period:         %s\n", sprintPeriod(p, minDate, maxDate))
