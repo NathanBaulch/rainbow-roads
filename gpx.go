@@ -3,6 +3,7 @@ package main
 import (
 	"io"
 	"io/ioutil"
+	"strings"
 
 	"github.com/tkrajina/gpxgo/gpx"
 )
@@ -60,8 +61,10 @@ func parseGPX(r io.Reader) error {
 
 	for _, t := range g.Tracks {
 		sport := t.Type
-		if s, ok := stravaTypeCodes[sport]; ok {
-			sport = s
+		if strings.Contains(g.Creator, "Strava") {
+			if s, ok := stravaTypeCodes[sport]; ok {
+				sport = s
+			}
 		}
 		if !includeSport(sport) {
 			continue
