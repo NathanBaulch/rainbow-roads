@@ -432,6 +432,9 @@ func includeDate(date time.Time) bool {
 }
 
 func includeDuration(duration time.Duration) bool {
+	if duration == 0 {
+		return false
+	}
 	if min := minDuration.Duration; min != 0 && duration < min {
 		return false
 	}
@@ -442,6 +445,9 @@ func includeDuration(duration time.Duration) bool {
 }
 
 func includeDistance(distance float64) bool {
+	if distance == 0 {
+		return false
+	}
 	if minDistance != 0 && distance < float64(minDistance) {
 		return false
 	}
