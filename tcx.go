@@ -2,7 +2,6 @@ package main
 
 import (
 	"io"
-	"time"
 
 	"github.com/llehouerou/go-tcx"
 )
@@ -23,18 +22,17 @@ func parseTCX(r io.Reader) error {
 				continue
 			}
 
-			act := &activity{
-				sport:    a.Sport,
-				date:     l.StartTime,
-				duration: time.Duration(l.TotalTimeInSeconds) * time.Second,
-				distance: l.DistanceInMeters,
-			}
-			if !includeDate(act.date) ||
-				!includeDuration(act.duration) ||
-				!includeDistance(act.distance) {
+			t0, t1 := l.Track[0], l.Track[len(l.Track)-1]
+			if !includeTimestamp(t0.Time, t1.Time) ||
+				!includeDuration(t1.Time.Sub(t0.Time)) ||
+				!includeDistance(l.DistanceInMeters) {
 				continue
 			}
-			act.records = make([]*record, 0, len(l.Track))
+			act := &activity{
+				sport:    a.Sport,
+				distance: l.DistanceInMeters,
+				records:  make([]*record, 0, len(l.Track)),
+			}
 			for _, t := range l.Track {
 				if t.LatitudeInDegrees != 0 && t.LongitudeInDegrees != 0 {
 					act.records = append(act.records, &record{

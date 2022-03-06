@@ -26,11 +26,11 @@ activity files: 9,327
 activities:     270
 sports:         running (270)
 period:         1.6 years (2020-08-02 to 2022-02-24)
-duration range: 15m28s to 1h32m39s
+duration range: 16m1s to 1h38m27s
 distance range: 3.0km to 16.8km
 bounds:         -37.8,144.9,4987.12259
 total points:   154,907
-total duration: 197h58m26s
+total duration: 207h57m42s
 total distance: 2,110.7km
 ```
 The easiest way to find the coordinates of a known location is to right-click on it in Google Maps and select the first menu item.

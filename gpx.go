@@ -55,10 +55,6 @@ func parseGPX(r io.Reader) error {
 		return err
 	}
 
-	if g.Time != nil && !includeDate(*g.Time) {
-		return nil
-	}
-
 	for _, t := range g.Tracks {
 		sport := t.Type
 		if strings.Contains(g.Creator, "Strava") {
@@ -76,21 +72,15 @@ func parseGPX(r io.Reader) error {
 			}
 
 			p0, p1 := s.Points[0], s.Points[len(s.Points)-1]
-			act := &activity{
-				sport:    sport,
-				duration: p1.Timestamp.Sub(p0.Timestamp),
-			}
-			if g.Time != nil {
-				act.date = *g.Time
-			} else {
-				act.date = s.Points[0].Timestamp
-			}
-			if !includeDate(act.date) ||
-				!includeDuration(act.duration) {
+			if !includeTimestamp(p0.Timestamp, p1.Timestamp) ||
+				!includeDuration(p1.Timestamp.Sub(p0.Timestamp)) {
 				continue
 			}
 
-			act.records = make([]*record, len(s.Points))
+			act := &activity{
+				sport:   sport,
+				records: make([]*record, len(s.Points)),
+			}
 			for i, p := range s.Points {
 				act.records[i] = &record{
 					ts:  p.Timestamp,

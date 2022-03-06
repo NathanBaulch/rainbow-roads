@@ -307,17 +307,19 @@ func parse() error {
 		} else {
 			sportStats[strings.ToLower(act.sport)]++
 		}
-		if minDate.IsZero() || act.date.Before(minDate) {
-			minDate = act.date
+		ts0, ts1 := act.records[0].ts, act.records[len(act.records)-1].ts
+		if minDate.IsZero() || ts0.Before(minDate) {
+			minDate = ts0
 		}
-		if maxDate.IsZero() || act.date.After(maxDate) {
-			maxDate = act.date
+		if maxDate.IsZero() || ts1.After(maxDate) {
+			maxDate = ts1
 		}
-		if act.duration < minDur {
-			minDur = act.duration
+		dur := ts1.Sub(ts0)
+		if dur < minDur {
+			minDur = dur
 		}
-		if act.duration > maxDur {
-			maxDur = act.duration
+		if dur > maxDur {
+			maxDur = dur
 		}
 		if act.distance < minDist {
 			minDist = act.distance
@@ -327,7 +329,7 @@ func parse() error {
 		}
 
 		sumPts += len(act.records)
-		sumDur += act.duration
+		sumDur += dur
 		sumDist += act.distance
 
 		for _, r := range act.records {
@@ -421,11 +423,11 @@ func includeSport(sport string) bool {
 	return false
 }
 
-func includeDate(date time.Time) bool {
-	if !after.Time.IsZero() && after.Time.After(date) {
+func includeTimestamp(from, to time.Time) bool {
+	if !after.Time.IsZero() && after.Time.After(from) {
 		return false
 	}
-	if !before.Time.IsZero() && before.Time.Before(date) {
+	if !before.Time.IsZero() && before.Time.Before(to) {
 		return false
 	}
 	return true
@@ -459,8 +461,6 @@ func includeDistance(distance float64) bool {
 
 type activity struct {
 	sport    string
-	date     time.Time
-	duration time.Duration
 	distance float64
 	records  []*record
 }
