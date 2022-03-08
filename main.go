@@ -22,12 +22,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/StephaneBunel/bresenham"
 	"github.com/kettek/apng"
 	"github.com/schollz/progressbar"
-	"golang.org/x/image/font"
-	"golang.org/x/image/font/basicfont"
-	"golang.org/x/image/math/fixed"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
@@ -496,10 +492,6 @@ func render() error {
 		pal[i] = colors.GetColorAt(math.Sqrt(float64(i) / float64(0xff)))
 	}
 
-	watermark := "NathanBaulch/rainbow-roads"
-	if Version != "" {
-		watermark += " " + Version
-	}
 	bg := image.NewPaletted(image.Rect(0, 0, int(width), int(height)), pal)
 	for i := 0; i < len(bg.Pix); i += bg.Stride {
 		if i == 0 {
@@ -511,19 +503,11 @@ func render() error {
 		}
 	}
 	if !noWatermark {
-		d := &font.Drawer{
-			Dst:  bg,
-			Src:  image.NewUniform(pal[0x80]),
-			Face: basicfont.Face7x13,
+		text := "NathanBaulch/rainbow-roads"
+		if Version != "" {
+			text += " " + Version
 		}
-		b, _ := d.BoundString(watermark)
-		b = b.Sub(b.Min)
-		if b.In(fixed.R(0, 0, bg.Rect.Max.X-10, bg.Rect.Max.Y-10)) {
-			d.Dot = fixed.P(bg.Rect.Max.X, bg.Rect.Max.Y).
-				Sub(b.Max.Sub(fixed.P(0, basicfont.Face7x13.Height))).
-				Sub(fixed.P(5, 5))
-			d.DrawString(watermark)
-		}
+		drawString(bg, 0x80, text)
 	}
 
 	ims = make([]*image.Paletted, frames)
@@ -533,67 +517,20 @@ func render() error {
 		copy(im.Pix, bg.Pix)
 		fp := 1.2 * float64(f+1) / float64(frames)
 		for _, act := range activities {
-			var rprev *record
+			var rPrev *record
 			for _, r := range act.records {
-				pp := fp - r.p
-				if pp < 0 {
+				if pp := fp - r.p; pp < 0 {
 					break
-				} else if pp > 1 || (rprev != nil && r.x == rprev.x && r.y == rprev.y) {
-					rprev = r
-					continue
+				} else if pp < 1 && rPrev != nil && (r.x != rPrev.x || r.y != rPrev.y) {
+					drawLine(im, uint8(pp*0xff), rPrev.x, rPrev.y, r.x, r.y)
 				}
-				setPixIfLower := func(x, y int, ci uint8) bool {
-					if (image.Point{X: x, Y: y}.In(im.Rect)) {
-						i := im.PixOffset(x, y)
-						if im.Pix[i] > ci {
-							im.Pix[i] = ci
-							return true
-						}
-					}
-					return false
-				}
-				setPix := func(x, y int, _ color.Color) {
-					ci := uint8(pp * 0xff)
-					if !setPixIfLower(x, y, ci) {
-						return
-					}
-					if ci < 0x80 {
-						ci *= 2
-						setPixIfLower(x-1, y, ci)
-						setPixIfLower(x, y-1, ci)
-						setPixIfLower(x+1, y, ci)
-						setPixIfLower(x, y+1, ci)
-					}
-					if ci < 0x80 {
-						ci *= 2
-						setPixIfLower(x-1, y-1, ci)
-						setPixIfLower(x-1, y+1, ci)
-						setPixIfLower(x+1, y-1, ci)
-						setPixIfLower(x+1, y+1, ci)
-					}
-				}
-				if rprev != nil {
-					if dx, dy := r.x-rprev.x, r.y-rprev.y; dx < -1 || dx > 1 || dy < -1 || dy > 1 {
-						bresenham.Bresenham(plotterFunc(setPix), rprev.x, rprev.y, r.x, r.y, nil)
-					} else {
-						setPix(r.x, r.y, nil)
-					}
-				} else {
-					setPix(r.x, r.y, nil)
-				}
-				rprev = r
+				rPrev = r
 			}
 		}
 		ims[f] = im
 	}
 
 	return nil
-}
-
-type plotterFunc func(x, y int, c color.Color)
-
-func (f plotterFunc) Set(x, y int, c color.Color) {
-	f(x, y, c)
 }
 
 func save() error {
