@@ -83,7 +83,7 @@ Usage of rainbow-roads:
 ## Installing from source
 Simply install Go and run:
 ```
-go install github.com/NathanBaulch/rainbow-roads
+go install github.com/NathanBaulch/rainbow-roads@latest
 ```
 
 ## Built with
