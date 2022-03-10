@@ -74,11 +74,13 @@ Usage of rainbow-roads:
         width of the generated image in pixels (default 500)
 ```
 
-## Garmin tutorial
-1. Request a copy of all your activity data here: https://www.garmin.com/en-US/account/datamanagement/exportdata/
+## Usage guide
+1. Request a copy of your activity data.
+   1. **Garmin:** Follow the "Export All Garmin Data Using Account Management Center" directions in [this](https://support.strava.com/hc/en-us/articles/216918437-Exporting-your-Data-and-Bulk-Export#Bulk) support article.
+   2. **Strava:** Follow the "Bulk Export" directions in [this](https://support.strava.com/hc/en-us/articles/216918437-Exporting-your-Data-and-Bulk-Export#Bulk) support article.
 2. Download the file linked in the email they send.
 3. Specify filter options to refine the activities included.
-4. Pass the downloaded ZIP file path to rainbow-roads after any options. 
+4. Pass the downloaded ZIP file path to rainbow-roads after any options.
 
 ## Installing from source
 Simply install Go and run:
