@@ -74,13 +74,18 @@ Usage of rainbow-roads:
         width of the generated image in pixels (default 500)
 ```
 
-## Usage guide
-1. Request a copy of your activity data.
-   1. **Garmin:** Follow the "Export All Garmin Data Using Account Management Center" directions in [this](https://support.strava.com/hc/en-us/articles/216918437-Exporting-your-Data-and-Bulk-Export#Bulk) support article.
-   2. **Strava:** Follow the "Bulk Export" directions in [this](https://support.strava.com/hc/en-us/articles/216918437-Exporting-your-Data-and-Bulk-Export#Bulk) support article.
-2. Download the file linked in the email they send.
-3. Specify filter options to refine the activities included.
-4. Pass the downloaded ZIP file path to rainbow-roads after any options.
+## Beginners guide (Windows)
+1. Download the latest release of rainbow-roads and extract the ZIP archive into the same directory.
+   * _Advanced:_ Move the rainbow-roads.exe to a more permanent location in your path.
+2. Request a copy of your activity data.
+   * **Garmin:** Follow the "Export All Garmin Data Using Account Management Center" directions in [this](https://support.strava.com/hc/en-us/articles/216918437-Exporting-your-Data-and-Bulk-Export#Bulk) support article.
+   * **Strava:** Follow the "Bulk Export" directions in [this](https://support.strava.com/hc/en-us/articles/216918437-Exporting-your-Data-and-Bulk-Export#Bulk) support article.
+3. Download the ZIP file linked in the email they send. No need to extract it.
+4. Open the standard Command Prompt app.
+5. Run `cd %HOMEPATH%\Downloads` to change into the downloads directory.
+6. Run `rainbow-roads export.zip` where export.zip is the name of the activity ZIP file you were emailed.
+   * _Advanced:_ Specify filter options to refine the activities included (see example usage above).
+7. Open "out.gif" in a browser and enjoy the show.
 
 ## Installing from source
 Simply install Go and run:
