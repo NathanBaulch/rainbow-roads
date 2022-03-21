@@ -10,6 +10,18 @@ import (
 	"golang.org/x/image/math/fixed"
 )
 
+func drawFill(im *image.Paletted, ci uint8) {
+	for i := 0; i < len(im.Pix); i += im.Stride {
+		if i == 0 {
+			for j := 0; j < im.Stride; j++ {
+				im.Pix[j] = ci
+			}
+		} else {
+			copy(im.Pix[i:i+im.Stride], im.Pix[0:im.Stride])
+		}
+	}
+}
+
 func drawLine(im *image.Paletted, ci uint8, x1, y1, x2, y2 int) {
 	setPixIfLower := func(x, y int, ci uint8) bool {
 		if (image.Point{X: x, Y: y}.In(im.Rect)) {

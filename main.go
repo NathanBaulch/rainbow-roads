@@ -496,15 +496,7 @@ func render() error {
 	pal[len(pal)-1] = color.Black
 
 	bg := image.NewPaletted(image.Rect(0, 0, int(width), int(height)), pal)
-	for i := 0; i < len(bg.Pix); i += bg.Stride {
-		if i == 0 {
-			for j := 0; j < bg.Stride; j++ {
-				bg.Pix[j] = uint8(len(pal) - 1)
-			}
-		} else {
-			copy(bg.Pix[i:i+bg.Stride], bg.Pix[0:bg.Stride])
-		}
-	}
+	drawFill(bg, uint8(len(pal)-1))
 	if !noWatermark {
 		text := "NathanBaulch/rainbow-roads"
 		if Version != "" {
@@ -519,6 +511,8 @@ func render() error {
 		im := image.NewPaletted(bg.Rect, pal)
 		copy(im.Pix, bg.Pix)
 		fp := 1.25 * float64(f+1) / float64(frames)
+		var rect image.Rectangle
+		crop := f > 0 && format.String() != "zip"
 		for _, act := range activities {
 			var rPrev *record
 			for _, r := range act.records {
@@ -530,9 +524,16 @@ func render() error {
 						ci = uint8(math.Sqrt(pp) * float64(len(pal)-1))
 					}
 					drawLine(im, ci, rPrev.x, rPrev.y, r.x, r.y)
+					if crop {
+						lineRect := image.Rect(rPrev.x, rPrev.y, r.x, r.y).Inset(-1)
+						rect = rect.Union(lineRect.Union(lineRect.Add(image.Point{X: 1, Y: 1})))
+					}
 				}
 				rPrev = r
 			}
+		}
+		if crop {
+			im = im.SubImage(rect).(*image.Paletted)
 		}
 		ims[f] = im
 	}
@@ -566,14 +567,24 @@ func save() error {
 }
 
 func saveGIF(w io.Writer) error {
-	g := &gif.GIF{Image: ims, Delay: make([]int, len(ims))}
+	g := &gif.GIF{
+		Image: ims,
+		Delay: make([]int, len(ims)),
+		Config: image.Config{
+			ColorModel: ims[0].Palette,
+			Width:      ims[0].Rect.Max.X,
+			Height:     ims[0].Rect.Max.Y,
+		},
+	}
 	return gif.EncodeAll(w, g)
 }
 
 func savePNG(w io.Writer) error {
 	a := apng.APNG{Frames: make([]apng.Frame, len(ims))}
-	for i, img := range ims {
-		a.Frames[i].Image = img
+	for i, im := range ims {
+		a.Frames[i].Image = im
+		a.Frames[i].XOffset = im.Rect.Min.X
+		a.Frames[i].YOffset = im.Rect.Min.Y
 	}
 	return apng.Encode(w, a)
 }
@@ -581,10 +592,10 @@ func savePNG(w io.Writer) error {
 func saveZIP(w io.Writer) error {
 	z := zip.NewWriter(w)
 	defer z.Close()
-	for i, img := range ims {
+	for i, im := range ims {
 		if w, err := z.Create(fmt.Sprintf("%d.jpg", i)); err != nil {
 			return err
-		} else if err := jpeg.Encode(w, img, nil); err != nil {
+		} else if err := jpeg.Encode(w, im, nil); err != nil {
 			return err
 		}
 	}
