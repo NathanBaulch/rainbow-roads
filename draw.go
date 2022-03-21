@@ -10,7 +10,7 @@ import (
 	"golang.org/x/image/math/fixed"
 )
 
-func drawLine(im *image.Paletted, c uint8, x1, y1, x2, y2 int) {
+func drawLine(im *image.Paletted, ci uint8, x1, y1, x2, y2 int) {
 	setPixIfLower := func(x, y int, ci uint8) bool {
 		if (image.Point{X: x, Y: y}.In(im.Rect)) {
 			i := im.PixOffset(x, y)
@@ -21,26 +21,28 @@ func drawLine(im *image.Paletted, c uint8, x1, y1, x2, y2 int) {
 		}
 		return false
 	}
-	setPix := func(x, y int, _ color.Color) {
-		if !setPixIfLower(x, y, c) {
+	setPix := func(x, y int, c color.Color) {
+		ci := c.(color.Gray).Y
+		if !setPixIfLower(x, y, ci) {
 			return
 		}
-		if c < 0x80 {
-			c *= 2
-			setPixIfLower(x-1, y, c)
-			setPixIfLower(x, y-1, c)
-			setPixIfLower(x+1, y, c)
-			setPixIfLower(x, y+1, c)
+		const sqrt2 = 1.414213562
+		if i := float64(ci) * sqrt2; i < float64(len(im.Palette)) {
+			ci = uint8(i)
+			setPixIfLower(x-1, y, ci)
+			setPixIfLower(x, y-1, ci)
+			setPixIfLower(x+1, y, ci)
+			setPixIfLower(x, y+1, ci)
 		}
-		if c < 0x80 {
-			c *= 2
-			setPixIfLower(x-1, y-1, c)
-			setPixIfLower(x-1, y+1, c)
-			setPixIfLower(x+1, y-1, c)
-			setPixIfLower(x+1, y+1, c)
+		if i := float64(ci) * sqrt2; i < float64(len(im.Palette)) {
+			ci = uint8(i)
+			setPixIfLower(x-1, y-1, ci)
+			setPixIfLower(x-1, y+1, ci)
+			setPixIfLower(x+1, y-1, ci)
+			setPixIfLower(x+1, y+1, ci)
 		}
 	}
-	bresenham.Bresenham(plotterFunc(setPix), x1, y1, x2, y2, nil)
+	bresenham.Bresenham(plotterFunc(setPix), x1, y1, x2, y2, color.Gray{Y: ci})
 }
 
 type plotterFunc func(x, y int, c color.Color)
@@ -49,10 +51,10 @@ func (f plotterFunc) Set(x, y int, c color.Color) {
 	f(x, y, c)
 }
 
-func drawString(im *image.Paletted, c uint8, text string) {
+func drawString(im *image.Paletted, ci uint8, text string) {
 	d := &font.Drawer{
 		Dst:  im,
-		Src:  image.NewUniform(im.Palette[c]),
+		Src:  image.NewUniform(im.Palette[ci]),
 		Face: basicfont.Face7x13,
 	}
 	b, _ := d.BoundString(text)

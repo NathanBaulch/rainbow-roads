@@ -44,6 +44,8 @@ Usage of rainbow-roads:
         date prior to which activities should be included
   -bounded_by region
         region that activities must be fully contained within, eg -37.8,144.9,10km
+  -color_depth uint
+        number of bits per color in the image palette (default 5)
   -colors string
         CSS linear-colors inspired color scheme string, eg red,yellow,green,blue,black (default #fff,#ff8,#911,#414,#007@.5,#001)
   -ends_near region

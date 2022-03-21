@@ -38,6 +38,7 @@ var (
 	height      uint
 	format      = NewFormatFlag("gif", "png", "zip")
 	colors      ColorsFlag
+	colorDepth  uint
 	noWatermark bool
 
 	sports        SportsFlag
@@ -69,6 +70,7 @@ func init() {
 	flag.UintVar(&width, "width", 500, "width of the generated image in pixels")
 	flag.Var(&format, "format", "output file format `string`, supports gif, png, zip")
 	flag.Var(&colors, "colors", "CSS linear-colors inspired color scheme `string`, eg red,yellow,green,blue,black")
+	flag.UintVar(&colorDepth, "color_depth", 5, "number of bits per color in the image palette")
 	flag.BoolVar(&noWatermark, "no_watermark", false, "suppress the embedded project name and version string")
 	flag.Var(&sports, "sport", "sports to include, can be specified multiple times, eg running, cycling")
 	flag.Var(&after, "after", "`date` from which activities should be included")
@@ -487,16 +489,16 @@ func render() error {
 		}
 	}
 
-	pal := color.Palette(make([]color.Color, 0x100))
-	for i := 0; i < 0x100; i++ {
-		pal[i] = colors.GetColorAt(math.Sqrt(float64(i) / float64(0xff)))
+	pal := color.Palette(make([]color.Color, 1<<colorDepth))
+	for i := 0; i < len(pal); i++ {
+		pal[i] = colors.GetColorAt(float64(i) / float64(len(pal)-1))
 	}
 
 	bg := image.NewPaletted(image.Rect(0, 0, int(width), int(height)), pal)
 	for i := 0; i < len(bg.Pix); i += bg.Stride {
 		if i == 0 {
 			for j := 0; j < bg.Stride; j++ {
-				bg.Pix[j] = 0xff
+				bg.Pix[j] = uint8(len(pal) - 1)
 			}
 		} else {
 			copy(bg.Pix[i:i+bg.Stride], bg.Pix[0:bg.Stride])
@@ -507,7 +509,7 @@ func render() error {
 		if Version != "" {
 			text += " " + Version
 		}
-		drawString(bg, 0x80, text)
+		drawString(bg, uint8(len(pal)/2), text)
 	}
 
 	ims = make([]*image.Paletted, frames)
@@ -522,7 +524,7 @@ func render() error {
 				if pp := fp - r.p; pp < 0 {
 					break
 				} else if pp < 1 && rPrev != nil && (r.x != rPrev.x || r.y != rPrev.y) {
-					drawLine(im, uint8(pp*0xff), rPrev.x, rPrev.y, r.x, r.y)
+					drawLine(im, uint8(math.Sqrt(pp)*float64(len(pal))), rPrev.x, rPrev.y, r.x, r.y)
 				}
 				rPrev = r
 			}
