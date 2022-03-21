@@ -62,41 +62,46 @@ func parseGPX(r io.Reader) error {
 				sport = s
 			}
 		}
-		if !includeSport(sport) {
+		if len(t.Segments) == 0 || !includeSport(sport) {
 			continue
 		}
 
+		act := &activity{
+			sport:   sport,
+			records: make([]*record, 0, len(t.Segments[0].Points)),
+		}
+
+		var p0, p1 gpx.GPXPoint
 		for _, s := range t.Segments {
 			if len(s.Points) == 0 {
 				continue
 			}
 
-			p0, p1 := s.Points[0], s.Points[len(s.Points)-1]
-			if !includeTimestamp(p0.Timestamp, p1.Timestamp) ||
-				!includeDuration(p1.Timestamp.Sub(p0.Timestamp)) {
-				continue
-			}
-
-			act := &activity{
-				sport:   sport,
-				records: make([]*record, len(s.Points)),
-			}
 			for i, p := range s.Points {
-				act.records[i] = &record{
+				if len(act.records) == 0 {
+					p0 = p
+				}
+				p1 = p
+				act.records = append(act.records, &record{
 					ts:  p.Timestamp,
 					lat: degreesToRadians(p.Latitude),
 					lon: degreesToRadians(p.Longitude),
-				}
+				})
 				if i > 0 {
 					r0, r1 := act.records[i-1], act.records[i]
 					act.distance += haversineDistance(r0.lat, r0.lon, r1.lat, r1.lon)
 				}
 			}
-			if !includeDistance(act.distance) {
-				continue
-			}
-			activities = append(activities, act)
 		}
+
+		if len(act.records) == 0 ||
+			!includeTimestamp(p0.Timestamp, p1.Timestamp) ||
+			!includeDuration(p1.Timestamp.Sub(p0.Timestamp)) ||
+			!includeDistance(act.distance) {
+			continue
+		}
+
+		activities = append(activities, act)
 	}
 
 	return nil
