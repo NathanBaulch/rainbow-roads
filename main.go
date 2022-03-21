@@ -63,7 +63,7 @@ var (
 )
 
 func init() {
-	_ = colors.Set("#fff,#ff8,#911,#414,#007@.5,#001")
+	_ = colors.Set("#fff,#ff8,#911,#414,#007@.5,#003")
 
 	flag.StringVar(&output, "output", "out", "optional path of the generated file")
 	flag.UintVar(&frames, "frames", 100, "number of animation frames")
@@ -490,9 +490,10 @@ func render() error {
 	}
 
 	pal := color.Palette(make([]color.Color, 1<<colorDepth))
-	for i := 0; i < len(pal); i++ {
-		pal[i] = colors.GetColorAt(float64(i) / float64(len(pal)-1))
+	for i := 0; i < len(pal)-1; i++ {
+		pal[i] = colors.GetColorAt(float64(i) / float64(len(pal)-2))
 	}
+	pal[len(pal)-1] = color.Black
 
 	bg := image.NewPaletted(image.Rect(0, 0, int(width), int(height)), pal)
 	for i := 0; i < len(bg.Pix); i += bg.Stride {
@@ -517,14 +518,18 @@ func render() error {
 	for f := uint(0); f < frames; f++ {
 		im := image.NewPaletted(bg.Rect, pal)
 		copy(im.Pix, bg.Pix)
-		fp := 1.2 * float64(f+1) / float64(frames)
+		fp := 1.25 * float64(f+1) / float64(frames)
 		for _, act := range activities {
 			var rPrev *record
 			for _, r := range act.records {
 				if pp := fp - r.p; pp < 0 {
 					break
-				} else if pp < 1 && rPrev != nil && (r.x != rPrev.x || r.y != rPrev.y) {
-					drawLine(im, uint8(math.Sqrt(pp)*float64(len(pal))), rPrev.x, rPrev.y, r.x, r.y)
+				} else if rPrev != nil && (r.x != rPrev.x || r.y != rPrev.y) {
+					ci := uint8(len(pal) - 2)
+					if pp < 1 {
+						ci = uint8(math.Sqrt(pp) * float64(len(pal)-1))
+					}
+					drawLine(im, ci, rPrev.x, rPrev.y, r.x, r.y)
 				}
 				rPrev = r
 			}
