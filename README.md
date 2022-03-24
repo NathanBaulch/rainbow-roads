@@ -52,8 +52,10 @@ Usage of rainbow-roads:
         region that activities must end in, eg 30.06,31.22,1km
   -format string
         output file format string, supports gif, png, zip
+  -fps uint
+        animation frame rate (default 20)
   -frames uint
-        number of animation frames (default 100)
+        number of animation frames (default 200)
   -max_distance distance
         greatest distance of included activities, eg 10mi
   -max_duration duration

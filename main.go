@@ -34,6 +34,7 @@ var (
 	input       []string
 	output      string
 	frames      uint
+	fps         uint
 	width       uint
 	height      uint
 	format      = NewFormatFlag("gif", "png", "zip")
@@ -66,7 +67,8 @@ func init() {
 	_ = colors.Set("#fff,#ff8,#911,#414,#007@.5,#003")
 
 	flag.StringVar(&output, "output", "out", "optional path of the generated file")
-	flag.UintVar(&frames, "frames", 100, "number of animation frames")
+	flag.UintVar(&frames, "frames", 200, "number of animation frames")
+	flag.UintVar(&fps, "fps", 20, "animation frame rate")
 	flag.UintVar(&width, "width", 500, "width of the generated image in pixels")
 	flag.Var(&format, "format", "output file format `string`, supports gif, png, zip")
 	flag.Var(&colors, "colors", "CSS linear-colors inspired color scheme `string`, eg red,yellow,green,blue,black")
@@ -607,8 +609,10 @@ func saveGIF(w io.Writer) error {
 			Height:     ims[0].Rect.Max.Y,
 		},
 	}
-	for i := 0; i < len(ims); i++ {
+	d := int(math.Round(100 / float64(fps)))
+	for i := range ims {
 		g.Disposal[i] = gif.DisposalNone
+		g.Delay[i] = d
 	}
 	return gif.EncodeAll(w, g)
 }
@@ -621,6 +625,8 @@ func savePNG(w io.Writer) error {
 		a.Frames[i].XOffset = im.Rect.Min.X
 		a.Frames[i].YOffset = im.Rect.Min.Y
 		a.Frames[i].BlendOp = apng.BLEND_OP_OVER
+		a.Frames[i].DelayNumerator = 1
+		a.Frames[i].DelayDenominator = uint16(fps)
 	}
 	return apng.Encode(w, a)
 }
