@@ -11,59 +11,26 @@ import (
 )
 
 func drawFill(im *image.Paletted, ci uint8) {
-	for i := 0; i < len(im.Pix); i += im.Stride {
-		if i == 0 {
-			for j := 0; j < im.Stride; j++ {
-				im.Pix[j] = ci
-			}
-		} else {
-			copy(im.Pix[i:i+im.Stride], im.Pix[0:im.Stride])
+	if len(im.Pix) > 0 {
+		im.Pix[0] = ci
+		for i := 1; i < len(im.Pix); i *= 2 {
+			copy(im.Pix[i:], im.Pix[:i])
 		}
 	}
 }
 
-func drawLine(im *image.Paletted, ci uint8, x1, y1, x2, y2 int) {
-	setPixIfLower := func(x, y int, ci uint8) bool {
-		if (image.Point{X: x, Y: y}.In(im.Rect)) {
-			i := im.PixOffset(x, y)
-			if im.Pix[i] > ci {
-				im.Pix[i] = ci
-				return true
-			}
-		}
-		return false
+var grays = make([]color.Color, 0x100)
+
+func drawLine(p bresenham.Plotter, x1, y1, x2, y2 int, ci uint8) {
+	c := grays[ci]
+	if c == nil {
+		c = color.Gray{Y: ci}
+		grays[ci] = c
 	}
-	setPix := func(x, y int, c color.Color) {
-		ci := c.(color.Gray).Y
-		if !setPixIfLower(x, y, ci) {
-			return
-		}
-		const sqrt2 = 1.414213562
-		if i := float64(ci) * sqrt2; i < float64(len(im.Palette)) {
-			ci = uint8(i)
-			setPixIfLower(x-1, y, ci)
-			setPixIfLower(x, y-1, ci)
-			setPixIfLower(x+1, y, ci)
-			setPixIfLower(x, y+1, ci)
-		}
-		if i := float64(ci) * sqrt2; i < float64(len(im.Palette)) {
-			ci = uint8(i)
-			setPixIfLower(x-1, y-1, ci)
-			setPixIfLower(x-1, y+1, ci)
-			setPixIfLower(x+1, y-1, ci)
-			setPixIfLower(x+1, y+1, ci)
-		}
-	}
-	bresenham.Bresenham(plotterFunc(setPix), x1, y1, x2, y2, color.Gray{Y: ci})
+	bresenham.Bresenham(p, x1, y1, x2, y2, c)
 }
 
-type plotterFunc func(x, y int, c color.Color)
-
-func (f plotterFunc) Set(x, y int, c color.Color) {
-	f(x, y, c)
-}
-
-func drawString(im *image.Paletted, ci uint8, text string) {
+func drawString(im *image.Paletted, text string, ci uint8) {
 	d := &font.Drawer{
 		Dst:  im,
 		Src:  image.NewUniform(im.Palette[ci]),

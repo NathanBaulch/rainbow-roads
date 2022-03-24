@@ -502,7 +502,7 @@ func render() error {
 		if Version != "" {
 			text += " " + Version
 		}
-		drawString(bg, uint8(len(pal)/2), text)
+		drawString(bg, text, uint8(len(pal)/2))
 	}
 
 	ims = make([]*image.Paletted, frames)
@@ -513,6 +513,7 @@ func render() error {
 		fp := 1.25 * float64(f+1) / float64(frames)
 		var rect image.Rectangle
 		crop := f > 0 && format.String() != "zip"
+		p := &glowPlotter{im}
 		for _, act := range activities {
 			var rPrev *record
 			for _, r := range act.records {
@@ -523,7 +524,7 @@ func render() error {
 					if pp < 1 {
 						ci = uint8(math.Sqrt(pp) * float64(len(pal)-1))
 					}
-					drawLine(im, ci, rPrev.x, rPrev.y, r.x, r.y)
+					drawLine(p, rPrev.x, rPrev.y, r.x, r.y, ci)
 					if crop {
 						lineRect := image.Rect(rPrev.x, rPrev.y, r.x, r.y).Inset(-1)
 						rect = rect.Union(lineRect.Union(lineRect.Add(image.Point{X: 1, Y: 1})))
@@ -539,6 +540,42 @@ func render() error {
 	}
 
 	return nil
+}
+
+type glowPlotter struct {
+	*image.Paletted
+}
+
+func (p *glowPlotter) Set(x, y int, c color.Color) {
+	ci := c.(color.Gray).Y
+	if p.setPixIfLower(x, y, ci) {
+		const sqrt2 = 1.414213562
+		if i := float64(ci) * sqrt2; i < float64(len(p.Palette)-1) {
+			ci = uint8(i)
+			p.setPixIfLower(x-1, y, ci)
+			p.setPixIfLower(x, y-1, ci)
+			p.setPixIfLower(x+1, y, ci)
+			p.setPixIfLower(x, y+1, ci)
+		}
+		if i := float64(ci) * sqrt2; i < float64(len(p.Palette)-1) {
+			ci = uint8(i)
+			p.setPixIfLower(x-1, y-1, ci)
+			p.setPixIfLower(x-1, y+1, ci)
+			p.setPixIfLower(x+1, y-1, ci)
+			p.setPixIfLower(x+1, y+1, ci)
+		}
+	}
+}
+
+func (p *glowPlotter) setPixIfLower(x, y int, ci uint8) bool {
+	if (image.Point{X: x, Y: y}.In(p.Rect)) {
+		i := p.PixOffset(x, y)
+		if p.Pix[i] > ci {
+			p.Pix[i] = ci
+			return true
+		}
+	}
+	return false
 }
 
 func save() error {
