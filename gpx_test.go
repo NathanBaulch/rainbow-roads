@@ -13,8 +13,11 @@ func TestGPXStravaTypeCodes(t *testing.T) {
 		  <trk>
 		    <type>9</type>
 		    <trkseg>
-		      <trkpt lat="7.6196940" lon="22.3098920">
+		      <trkpt lat="7.61969" lon="22.30989">
 		        <time>2022-02-13T00:07:06Z</time>
+		      </trkpt>
+		      <trkpt lat="7.61968" lon="22.30988">
+		        <time>2022-02-13T00:07:07Z</time>
 		      </trkpt>
 		    </trkseg>
 		  </trk>
