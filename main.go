@@ -490,13 +490,14 @@ func render() error {
 	}
 
 	pal := color.Palette(make([]color.Color, 1<<colorDepth))
-	for i := 0; i < len(pal)-1; i++ {
-		pal[i] = colors.GetColorAt(float64(i) / float64(len(pal)-2))
+	for i := 0; i < len(pal)-2; i++ {
+		pal[i] = colors.GetColorAt(float64(i) / float64(len(pal)-3))
 	}
-	pal[len(pal)-1] = color.Black
+	pal[len(pal)-2] = color.Black
+	pal[len(pal)-1] = color.Transparent
 
 	bg := image.NewPaletted(image.Rect(0, 0, int(width), int(height)), pal)
-	drawFill(bg, uint8(len(pal)-1))
+	drawFill(bg, uint8(len(pal)-2))
 	if !noWatermark {
 		text := "NathanBaulch/rainbow-roads"
 		if Version != "" {
@@ -511,8 +512,6 @@ func render() error {
 		im := image.NewPaletted(bg.Rect, pal)
 		copy(im.Pix, bg.Pix)
 		fp := 1.25 * float64(f+1) / float64(frames)
-		var rect image.Rectangle
-		crop := f > 0 && format.String() != "zip"
 		p := &glowPlotter{im}
 		for _, act := range activities {
 			var rPrev *record
@@ -520,21 +519,14 @@ func render() error {
 				if pp := fp - r.p; pp < 0 {
 					break
 				} else if rPrev != nil && (r.x != rPrev.x || r.y != rPrev.y) {
-					ci := uint8(len(pal) - 2)
+					ci := uint8(len(pal) - 3)
 					if pp < 1 {
-						ci = uint8(math.Sqrt(pp) * float64(len(pal)-1))
+						ci = uint8(math.Sqrt(pp) * float64(len(pal)-2))
 					}
 					drawLine(p, rPrev.x, rPrev.y, r.x, r.y, ci)
-					if crop {
-						lineRect := image.Rect(rPrev.x, rPrev.y, r.x, r.y).Inset(-1)
-						rect = rect.Union(lineRect.Union(lineRect.Add(image.Point{X: 1, Y: 1})))
-					}
 				}
 				rPrev = r
 			}
-		}
-		if crop {
-			im = im.SubImage(rect).(*image.Paletted)
 		}
 		ims[f] = im
 	}
@@ -550,14 +542,14 @@ func (p *glowPlotter) Set(x, y int, c color.Color) {
 	ci := c.(color.Gray).Y
 	if p.setPixIfLower(x, y, ci) {
 		const sqrt2 = 1.414213562
-		if i := float64(ci) * sqrt2; i < float64(len(p.Palette)-1) {
+		if i := float64(ci) * sqrt2; i < float64(len(p.Palette)-2) {
 			ci = uint8(i)
 			p.setPixIfLower(x-1, y, ci)
 			p.setPixIfLower(x, y-1, ci)
 			p.setPixIfLower(x+1, y, ci)
 			p.setPixIfLower(x, y+1, ci)
 		}
-		if i := float64(ci) * sqrt2; i < float64(len(p.Palette)-1) {
+		if i := float64(ci) * sqrt2; i < float64(len(p.Palette)-2) {
 			ci = uint8(i)
 			p.setPixIfLower(x-1, y-1, ci)
 			p.setPixIfLower(x-1, y+1, ci)
@@ -604,24 +596,31 @@ func save() error {
 }
 
 func saveGIF(w io.Writer) error {
+	optimizeFrames(ims)
 	g := &gif.GIF{
-		Image: ims,
-		Delay: make([]int, len(ims)),
+		Image:    ims,
+		Delay:    make([]int, len(ims)),
+		Disposal: make([]byte, len(ims)),
 		Config: image.Config{
 			ColorModel: ims[0].Palette,
 			Width:      ims[0].Rect.Max.X,
 			Height:     ims[0].Rect.Max.Y,
 		},
 	}
+	for i := 0; i < len(ims); i++ {
+		g.Disposal[i] = gif.DisposalNone
+	}
 	return gif.EncodeAll(w, g)
 }
 
 func savePNG(w io.Writer) error {
+	optimizeFrames(ims)
 	a := apng.APNG{Frames: make([]apng.Frame, len(ims))}
 	for i, im := range ims {
 		a.Frames[i].Image = im
 		a.Frames[i].XOffset = im.Rect.Min.X
 		a.Frames[i].YOffset = im.Rect.Min.Y
+		a.Frames[i].BlendOp = apng.BLEND_OP_OVER
 	}
 	return apng.Encode(w, a)
 }
