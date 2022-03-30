@@ -583,7 +583,11 @@ func save() error {
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer func() {
+		if err := out.Close(); err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	switch format.String() {
 	case "gif":
@@ -633,7 +637,11 @@ func savePNG(w io.Writer) error {
 
 func saveZIP(w io.Writer) error {
 	z := zip.NewWriter(w)
-	defer z.Close()
+	defer func() {
+		if err := z.Close(); err != nil {
+			log.Fatal(err)
+		}
+	}()
 	for i, im := range ims {
 		if w, err := z.Create(fmt.Sprintf("%d.jpg", i)); err != nil {
 			return err
