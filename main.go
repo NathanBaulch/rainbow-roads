@@ -2,6 +2,7 @@ package main
 
 import (
 	"archive/zip"
+	"bufio"
 	"bytes"
 	"compress/gzip"
 	"errors"
@@ -28,7 +29,9 @@ import (
 )
 
 var (
-	Version string
+	Version    string
+	fullTitle  string
+	shortTitle string
 
 	input       []string
 	output      string
@@ -63,6 +66,12 @@ var (
 )
 
 func init() {
+	shortTitle = "rainbow-roads"
+	if Version != "" {
+		shortTitle += " " + Version
+	}
+	fullTitle = "NathanBaulch/" + shortTitle
+
 	_ = colors.Set("#fff,#ff8,#911,#414,#007@.5,#003")
 
 	flag.StringVar(&output, "output", "out", "optional path of the generated file")
@@ -88,23 +97,14 @@ func init() {
 }
 
 func main() {
-	title := "rainbow-roads"
-	if Version != "" {
-		title += " " + Version
-	}
-
 	flag.Usage = func() {
-		header := "Usage of rainbow-roads"
-		if Version != "" {
-			header += " " + Version
-		}
-		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", title)
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", shortTitle)
 		flag.PrintDefaults()
 	}
 	flag.Parse()
 
 	invalidFlag := func(name string, reason string) {
-		fmt.Printf("invalid value %q for flag -%s: %s\n", flag.Lookup(name).Value, name, reason)
+		fmt.Fprintln(flag.CommandLine.Output(), "Usage of", shortTitle+":")
 		flag.Usage()
 		os.Exit(2)
 	}
@@ -124,7 +124,7 @@ func main() {
 		invalidFlag("speed", "must be greater than or equal to 1")
 	}
 
-	p.Println(title)
+	p.Println(shortTitle)
 
 	input = flag.Args()
 	if len(input) == 0 {
@@ -523,11 +523,7 @@ func render() error {
 	bg := image.NewPaletted(image.Rect(0, 0, int(width), int(height)), pal)
 	drawFill(bg, uint8(len(pal)-2))
 	if !noWatermark {
-		text := "NathanBaulch/rainbow-roads"
-		if Version != "" {
-			text += " " + Version
-		}
-		drawString(bg, text, uint8(len(pal)/2))
+		drawString(bg, fullTitle, uint8(len(pal)/2))
 	}
 
 	ims = make([]*image.Paletted, frames)
@@ -640,7 +636,7 @@ func saveGIF(w io.Writer) error {
 		g.Disposal[i] = gif.DisposalNone
 		g.Delay[i] = d
 	}
-	return gif.EncodeAll(w, g)
+	return gif.EncodeAll(&gifWriter{Writer: bufio.NewWriter(w)}, g)
 }
 
 func savePNG(w io.Writer) error {
@@ -654,7 +650,7 @@ func savePNG(w io.Writer) error {
 		a.Frames[i].DelayNumerator = 1
 		a.Frames[i].DelayDenominator = uint16(fps)
 	}
-	return apng.Encode(w, a)
+	return apng.Encode(&pngWriter{Writer: w}, a)
 }
 
 func saveZIP(w io.Writer) error {

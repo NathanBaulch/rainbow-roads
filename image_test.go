@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"image"
 	"image/color"
@@ -44,5 +45,34 @@ func TestImageOptimizeFrames(t *testing.T) {
 		if !bytes.Equal(pix, expect.pix) {
 			t.Fatal("unexpected frame", i, "pixels: ", pix, "!=", expect.pix)
 		}
+	}
+}
+
+func TestImageGifWriter(t *testing.T) {
+	b := &bytes.Buffer{}
+	w := &gifWriter{Writer: bufio.NewWriter(b)}
+	if n, err := w.Write([]byte{0x21, 0xff, 0x0b}); err != nil {
+		t.Fatal(err)
+	} else if n != 33 {
+		t.Fatal("number of bytes written:", n, "!= 33")
+	}
+	if err := w.Flush(); err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(b.Bytes(), []byte(fullTitle)) {
+		t.Fatal("metadata text not found")
+	}
+}
+
+func TestImagePngWriter(t *testing.T) {
+	b := &bytes.Buffer{}
+	w := &pngWriter{Writer: b}
+	if n, err := w.Write([]byte("    IDAT")); err != nil {
+		t.Fatal(err)
+	} else if n != 46 {
+		t.Fatal("number of bytes written:", n, "!= 46")
+	}
+	if !bytes.Contains(b.Bytes(), []byte(fullTitle)) {
+		t.Fatal("metadata text not found")
 	}
 }
