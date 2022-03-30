@@ -4,7 +4,7 @@ A command line tool that animates your exercise maps, inspired by an [article by
 
 ## Features
 * Supports FIT, TCX, GPX files. It can also traverse into ZIP files for easy ingestion of bulk activity exports.
-* Outputs GIF, animated PNG, or a ZIP file containing each frame in JPEG format.
+* Outputs GIF, animated PNG, or a ZIP file containing each frame in GIF format.
 * Activities can be filtered by sport, date, distance, duration and geographic region.
 * Configurable color scheme.
 

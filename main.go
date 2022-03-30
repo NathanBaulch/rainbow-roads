@@ -10,7 +10,6 @@ import (
 	"image"
 	"image/color"
 	"image/gif"
-	"image/jpeg"
 	"io"
 	"io/fs"
 	"io/ioutil"
@@ -643,9 +642,9 @@ func saveZIP(w io.Writer) error {
 		}
 	}()
 	for i, im := range ims {
-		if w, err := z.Create(fmt.Sprintf("%d.jpg", i)); err != nil {
+		if w, err := z.Create(fmt.Sprintf("%d.gif", i)); err != nil {
 			return err
-		} else if err := jpeg.Encode(w, im, nil); err != nil {
+		} else if err = gif.Encode(w, im, nil); err != nil {
 			return err
 		}
 	}
