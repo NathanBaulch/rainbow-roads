@@ -35,7 +35,6 @@ var (
 	frames      uint
 	fps         uint
 	width       uint
-	height      uint
 	format      = NewFormatFlag("gif", "png", "zip")
 	colors      ColorsFlag
 	colorDepth  uint
@@ -101,6 +100,24 @@ func main() {
 		flag.PrintDefaults()
 	}
 	flag.Parse()
+
+	invalidFlag := func(name string, reason string) {
+		fmt.Printf("invalid value %q for flag -%s: %s\n", flag.Lookup(name).Value, name, reason)
+		flag.Usage()
+		os.Exit(2)
+	}
+	if frames == 0 {
+		invalidFlag("frames", "must be positive")
+	}
+	if fps == 0 {
+		invalidFlag("fps", "must be positive")
+	}
+	if width == 0 {
+		invalidFlag("width", "must be positive")
+	}
+	if colorDepth == 0 {
+		invalidFlag("color_depth", "must be positive")
+	}
 
 	p.Println(title)
 
@@ -476,7 +493,7 @@ func render() error {
 	maxX, maxY := mercatorMeters(maxLat, maxLon)
 	dX, dY := maxX-minX, maxY-minY
 	scale := float64(width) / dX
-	height = uint(dY * scale)
+	height := uint(dY * scale)
 	scale *= 0.9
 	minX -= 0.05 * dX
 	maxY += 0.05 * dY
