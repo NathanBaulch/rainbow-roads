@@ -73,38 +73,50 @@ func init() {
 	fullTitle = "NathanBaulch/" + shortTitle
 
 	_ = colors.Set("#fff,#ff8,#911,#414,#007@.5,#003")
-
-	flag.StringVar(&output, "output", "out", "optional path of the generated file")
-	flag.UintVar(&frames, "frames", 200, "number of animation frames")
-	flag.UintVar(&fps, "fps", 20, "animation frame rate")
-	flag.UintVar(&width, "width", 500, "width of the generated image in pixels")
-	flag.Var(&format, "format", "output file format `string`, supports gif, png, zip")
-	flag.Var(&colors, "colors", "CSS linear-colors inspired color scheme `string`, eg red,yellow,green,blue,black")
-	flag.UintVar(&colorDepth, "color_depth", 5, "number of bits per color in the image palette")
-	flag.Float64Var(&speed, "speed", 1.25, "how quickly activities should progress")
-	flag.BoolVar(&noWatermark, "no_watermark", false, "suppress the embedded project name and version string")
-	flag.Var(&sports, "sport", "sports to include, can be specified multiple times, eg running, cycling")
-	flag.Var(&after, "after", "`date` from which activities should be included")
-	flag.Var(&before, "before", "`date` prior to which activities should be included")
-	flag.Var(&minDuration, "min_duration", "shortest `duration` of included activities, eg 15m")
-	flag.Var(&maxDuration, "max_duration", "longest `duration` of included activities, eg 1h")
-	flag.Var(&minDistance, "min_distance", "shortest `distance` of included activities, eg 2km")
-	flag.Var(&maxDistance, "max_distance", "greatest `distance` of included activities, eg 10mi")
-	flag.Var(&startsNear, "starts_near", "`region` that activities must start from, eg 51.53,-0.21,1km")
-	flag.Var(&endsNear, "ends_near", "`region` that activities must end in, eg 30.06,31.22,1km")
-	flag.Var(&passesThrough, "passes_through", "`region` that activities must pass through, eg 40.69,-74.12,10mi")
-	flag.Var(&boundedBy, "bounded_by", "`region` that activities must be fully contained within, eg -37.8,144.9,10km")
 }
 
 func main() {
+	general := &flag.FlagSet{}
+	general.StringVar(&output, "output", "out", "optional path of the generated file")
+	general.Var(&format, "format", "output file format `string`, supports gif, png, zip")
+	general.VisitAll(func(f *flag.Flag) { flag.Var(f.Value, f.Name, f.Usage) })
+
+	rendering := &flag.FlagSet{}
+	rendering.UintVar(&frames, "frames", 200, "number of animation frames")
+	rendering.UintVar(&fps, "fps", 20, "animation frame rate")
+	rendering.UintVar(&width, "width", 500, "width of the generated image in pixels")
+	rendering.Var(&colors, "colors", "CSS linear-colors inspired color scheme `string`, eg red,yellow,green,blue,black")
+	rendering.UintVar(&colorDepth, "color_depth", 5, "number of bits per color in the image palette")
+	rendering.Float64Var(&speed, "speed", 1.25, "how quickly activities should progress")
+	rendering.BoolVar(&noWatermark, "no_watermark", false, "suppress the embedded project name and version string")
+	rendering.VisitAll(func(f *flag.Flag) { flag.Var(f.Value, f.Name, f.Usage) })
+
+	filters := &flag.FlagSet{}
+	filters.Var(&sports, "sport", "sports to include, can be specified multiple times, eg running, cycling")
+	filters.Var(&after, "after", "`date` from which activities should be included")
+	filters.Var(&before, "before", "`date` prior to which activities should be included")
+	filters.Var(&minDuration, "min_duration", "shortest `duration` of included activities, eg 15m")
+	filters.Var(&maxDuration, "max_duration", "longest `duration` of included activities, eg 1h")
+	filters.Var(&minDistance, "min_distance", "shortest `distance` of included activities, eg 2km")
+	filters.Var(&maxDistance, "max_distance", "greatest `distance` of included activities, eg 10mi")
+	filters.Var(&startsNear, "starts_near", "`region` that activities must start from, eg 51.53,-0.21,1km")
+	filters.Var(&endsNear, "ends_near", "`region` that activities must end in, eg 30.06,31.22,1km")
+	filters.Var(&passesThrough, "passes_through", "`region` that activities must pass through, eg 40.69,-74.12,10mi")
+	filters.Var(&boundedBy, "bounded_by", "`region` that activities must be fully contained within, eg -37.8,144.9,10km")
+	filters.VisitAll(func(f *flag.Flag) { flag.Var(f.Value, f.Name, f.Usage) })
+
 	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", shortTitle)
-		flag.PrintDefaults()
+		fmt.Fprintln(flag.CommandLine.Output(), "Usage of", shortTitle+":")
+		general.PrintDefaults()
+		fmt.Fprintln(flag.CommandLine.Output(), "Filtering:")
+		filters.PrintDefaults()
+		fmt.Fprintln(flag.CommandLine.Output(), "Rendering:")
+		rendering.PrintDefaults()
 	}
 	flag.Parse()
 
 	invalidFlag := func(name string, reason string) {
-		fmt.Fprintln(flag.CommandLine.Output(), "Usage of", shortTitle+":")
+		fmt.Fprintf(flag.CommandLine.Output(), "invalid value %q for flag -%s: %s\n", flag.Lookup(name).Value, name, reason)
 		flag.Usage()
 		os.Exit(2)
 	}
@@ -272,6 +284,7 @@ type file struct {
 func parse() error {
 	activities = make([]*activity, 0, len(files))
 	pb := progressbar.New(len(files))
+	pb.SetWriter(os.Stderr)
 	var warnings []string
 	for _, f := range files {
 		_ = pb.Add(1)
@@ -279,9 +292,9 @@ func parse() error {
 			warnings = append(warnings, fmt.Sprint(f.path, ":", err))
 		}
 	}
-	fmt.Println()
+	fmt.Fprintln(os.Stderr)
 	for _, warning := range warnings {
-		fmt.Println("WARN:", warning)
+		fmt.Fprintln(os.Stderr, "WARN:", warning)
 	}
 
 	if len(activities) == 0 {

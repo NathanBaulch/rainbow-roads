@@ -38,24 +38,19 @@ The easiest way to find the coordinates of a known location is to right-click on
 ## Options
 ```text
 Usage of rainbow-roads:
+  -format string
+        output file format string, supports gif, png, zip
+  -output string
+        optional path of the generated file (default "out")
+Filtering:
   -after date
         date from which activities should be included
   -before date
         date prior to which activities should be included
   -bounded_by region
         region that activities must be fully contained within, eg -37.8,144.9,10km
-  -color_depth uint
-        number of bits per color in the image palette (default 5)
-  -colors string
-        CSS linear-colors inspired color scheme string, eg red,yellow,green,blue,black (default #fff,#ff8,#911,#414,#007@.5,#001)
   -ends_near region
         region that activities must end in, eg 30.06,31.22,1km
-  -format string
-        output file format string, supports gif, png, zip
-  -fps uint
-        animation frame rate (default 20)
-  -frames uint
-        number of animation frames (default 200)
   -max_distance distance
         greatest distance of included activities, eg 10mi
   -max_duration duration
@@ -64,18 +59,25 @@ Usage of rainbow-roads:
         shortest distance of included activities, eg 2km
   -min_duration duration
         shortest duration of included activities, eg 15m
-  -no_watermark
-        suppress the embedded project name and version string
-  -output string
-        optional path of the generated file (default "out")
   -passes_through region
         region that activities must pass through, eg 40.69,-74.12,10mi
-  -speed float
-        how quickly activities should progress (default 1.25)
   -sport value
         sports to include, can be specified multiple times, eg running, cycling
   -starts_near region
         region that activities must start from, eg 51.53,-0.21,1km
+Rendering:
+  -color_depth uint
+        number of bits per color in the image palette (default 5)
+  -colors string
+        CSS linear-colors inspired color scheme string, eg red,yellow,green,blue,black (default #fff,#ff8,#911,#414,#007@.5,#003)
+  -fps uint
+        animation frame rate (default 20)
+  -frames uint
+        number of animation frames (default 200)
+  -no_watermark
+        suppress the embedded project name and version string
+  -speed float
+        how quickly activities should progress (default 1.25)
   -width uint
         width of the generated image in pixels (default 500)
 ```
