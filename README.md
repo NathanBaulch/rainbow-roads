@@ -74,6 +74,8 @@ Rendering:
         animation frame rate (default 20)
   -frames uint
         number of animation frames (default 200)
+  -loop
+        start each activity sequentially and animate continuously
   -no_watermark
         suppress the embedded project name and version string
   -speed float

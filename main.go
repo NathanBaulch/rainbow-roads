@@ -42,6 +42,7 @@ var (
 	colors      ColorsFlag
 	colorDepth  uint
 	speed       float64
+	loop        bool
 	noWatermark bool
 
 	sports        SportsFlag
@@ -88,6 +89,7 @@ func main() {
 	rendering.Var(&colors, "colors", "CSS linear-colors inspired color scheme `string`, eg red,yellow,green,blue,black")
 	rendering.UintVar(&colorDepth, "color_depth", 5, "number of bits per color in the image palette")
 	rendering.Float64Var(&speed, "speed", 1.25, "how quickly activities should progress")
+	rendering.BoolVar(&loop, "loop", false, "start each activity sequentially and animate continuously")
 	rendering.BoolVar(&noWatermark, "no_watermark", false, "suppress the embedded project name and version string")
 	rendering.VisitAll(func(f *flag.Flag) { flag.Var(f.Value, f.Name, f.Usage) })
 
@@ -507,6 +509,10 @@ type record struct {
 }
 
 func render() error {
+	if loop {
+		sort.Slice(activities, func(i, j int) bool { return activities[i].records[0].ts.Before(activities[j].records[0].ts) })
+	}
+
 	minX, minY := mercatorMeters(minLat, minLon)
 	maxX, maxY := mercatorMeters(maxLat, maxLon)
 	dX, dY := maxX-minX, maxY-minY
@@ -516,13 +522,17 @@ func render() error {
 	minX -= 0.05 * dX
 	maxY += 0.05 * dY
 	pScale := 1 / (speed * float64(maxDur))
-	for _, act := range activities {
+	for i, act := range activities {
 		ts0 := act.records[0].ts
+		pOffset := 0.0
+		if loop {
+			pOffset = float64(i) / float64(len(activities))
+		}
 		for _, r := range act.records {
 			x, y := mercatorMeters(r.lat, r.lon)
 			r.x = int((x - minX) * scale)
 			r.y = int((maxY - y) * scale)
-			r.p = float64(r.ts.Sub(ts0)) * pScale
+			r.p = pOffset + float64(r.ts.Sub(ts0))*pScale
 		}
 	}
 
@@ -549,11 +559,16 @@ func render() error {
 		for _, act := range activities {
 			var rPrev *record
 			for _, r := range act.records {
-				if pp := fp - r.p; pp < 0 {
-					break
-				} else if rPrev != nil && (r.x != rPrev.x || r.y != rPrev.y) {
+				pp := fp - r.p
+				if pp < 0 {
+					if !loop {
+						break
+					}
+					pp++
+				}
+				if rPrev != nil && (r.x != rPrev.x || r.y != rPrev.y) {
 					ci := uint8(len(pal) - 3)
-					if pp < 1 {
+					if pp >= 0 && pp < 1 {
 						ci = uint8(math.Sqrt(pp) * float64(len(pal)-2))
 					}
 					drawLine(p, rPrev.x, rPrev.y, r.x, r.y, ci)
