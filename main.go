@@ -38,6 +38,7 @@ var (
 	format      = NewFormatFlag("gif", "png", "zip")
 	colors      ColorsFlag
 	colorDepth  uint
+	speed       float64
 	noWatermark bool
 
 	sports        SportsFlag
@@ -71,6 +72,7 @@ func init() {
 	flag.Var(&format, "format", "output file format `string`, supports gif, png, zip")
 	flag.Var(&colors, "colors", "CSS linear-colors inspired color scheme `string`, eg red,yellow,green,blue,black")
 	flag.UintVar(&colorDepth, "color_depth", 5, "number of bits per color in the image palette")
+	flag.Float64Var(&speed, "speed", 1.25, "how quickly activities should progress")
 	flag.BoolVar(&noWatermark, "no_watermark", false, "suppress the embedded project name and version string")
 	flag.Var(&sports, "sport", "sports to include, can be specified multiple times, eg running, cycling")
 	flag.Var(&after, "after", "`date` from which activities should be included")
@@ -117,6 +119,9 @@ func main() {
 	}
 	if colorDepth == 0 {
 		invalidFlag("color_depth", "must be positive")
+	}
+	if speed < 1 {
+		invalidFlag("speed", "must be greater than or equal to 1")
 	}
 
 	p.Println(title)
@@ -497,13 +502,14 @@ func render() error {
 	scale *= 0.9
 	minX -= 0.05 * dX
 	maxY += 0.05 * dY
+	pScale := 1 / (speed * float64(maxDur))
 	for _, act := range activities {
 		ts0 := act.records[0].ts
 		for _, r := range act.records {
 			x, y := mercatorMeters(r.lat, r.lon)
 			r.x = int((x - minX) * scale)
 			r.y = int((maxY - y) * scale)
-			r.p = float64(r.ts.Sub(ts0)) / float64(maxDur)
+			r.p = float64(r.ts.Sub(ts0)) * pScale
 		}
 	}
 
@@ -529,7 +535,7 @@ func render() error {
 	for f := uint(0); f < frames; f++ {
 		im := image.NewPaletted(bg.Rect, pal)
 		copy(im.Pix, bg.Pix)
-		fp := 1.25 * float64(f+1) / float64(frames)
+		fp := float64(f+1) / float64(frames)
 		p := &glowPlotter{im}
 		for _, act := range activities {
 			var rPrev *record

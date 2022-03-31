@@ -70,6 +70,8 @@ Usage of rainbow-roads:
         optional path of the generated file (default "out")
   -passes_through region
         region that activities must pass through, eg 40.69,-74.12,10mi
+  -speed float
+        how quickly activities should progress (default 1.25)
   -sport value
         sports to include, can be specified multiple times, eg running, cycling
   -starts_near region
