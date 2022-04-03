@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/kettek/apng"
@@ -252,7 +253,7 @@ func scanFile(fsys fs.FS, path string) error {
 		if gz {
 			ext = filepath.Ext(path[:len(path)-3])
 		}
-		var parser func(io.Reader) error
+		var parser func(io.Reader) ([]*activity, error)
 		if strings.EqualFold(ext, ".fit") {
 			parser = parseFIT
 		} else if strings.EqualFold(ext, ".gpx") {
@@ -262,13 +263,14 @@ func scanFile(fsys fs.FS, path string) error {
 		} else {
 			return nil
 		}
-		parse := func() (err error) {
+		parse := func() ([]*activity, error) {
 			var r io.Reader
+			var err error
 			if r, err = fsys.Open(path); err != nil {
-				return
+				return nil, err
 			} else if gz {
 				if r, err = gzip.NewReader(r); err != nil {
-					return
+					return nil, err
 				}
 			}
 			return parser(r)
@@ -280,25 +282,37 @@ func scanFile(fsys fs.FS, path string) error {
 
 type file struct {
 	path  string
-	parse func() error
+	parse func() ([]*activity, error)
 }
 
 func parse() error {
-	activities = make([]*activity, 0, len(files))
 	pb := progressbar.New(len(files))
 	pb.SetWriter(os.Stderr)
-	var warnings []string
-	for _, f := range files {
-		_ = pb.Add(1)
-		if err := f.parse(); err != nil {
-			warnings = append(warnings, fmt.Sprint(f.path, ":", err))
+	wg := sync.WaitGroup{}
+	wg.Add(len(files))
+	res := make([]struct {
+		acts []*activity
+		err  error
+	}, len(files))
+	for ii := range files {
+		i := ii
+		go func() {
+			res[i].acts, res[i].err = files[i].parse()
+			_ = pb.Add(1)
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+
+	fmt.Fprintln(os.Stderr)
+	activities = make([]*activity, 0, len(files))
+	for _, r := range res {
+		if r.err != nil {
+			fmt.Fprintln(os.Stderr, "WARN:", r.err)
+		} else {
+			activities = append(activities, r.acts...)
 		}
 	}
-	fmt.Fprintln(os.Stderr)
-	for _, warning := range warnings {
-		fmt.Fprintln(os.Stderr, "WARN:", warning)
-	}
-
 	if len(activities) == 0 {
 		return errors.New("no matching activities found")
 	}
@@ -551,33 +565,40 @@ func render() error {
 
 	ims = make([]*image.Paletted, frames)
 
-	for f := uint(0); f < frames; f++ {
-		im := image.NewPaletted(bg.Rect, pal)
-		copy(im.Pix, bg.Pix)
-		fp := float64(f+1) / float64(frames)
-		p := &glowPlotter{im}
-		for _, act := range activities {
-			var rPrev *record
-			for _, r := range act.records {
-				pp := fp - r.p
-				if pp < 0 {
-					if !loop {
-						break
+	wg := &sync.WaitGroup{}
+	wg.Add(int(frames))
+	for ff := uint(0); ff < frames; ff++ {
+		f := ff
+		go func() {
+			im := image.NewPaletted(bg.Rect, pal)
+			copy(im.Pix, bg.Pix)
+			fp := float64(f+1) / float64(frames)
+			gp := &glowPlotter{im}
+			for _, act := range activities {
+				var rPrev *record
+				for _, r := range act.records {
+					pp := fp - r.p
+					if pp < 0 {
+						if !loop {
+							break
+						}
+						pp++
 					}
-					pp++
-				}
-				if rPrev != nil && (r.x != rPrev.x || r.y != rPrev.y) {
-					ci := uint8(len(pal) - 3)
-					if pp >= 0 && pp < 1 {
-						ci = uint8(math.Sqrt(pp) * float64(len(pal)-2))
+					if rPrev != nil && (r.x != rPrev.x || r.y != rPrev.y) {
+						ci := uint8(len(pal) - 3)
+						if pp >= 0 && pp < 1 {
+							ci = uint8(math.Sqrt(pp) * float64(len(pal)-2))
+						}
+						drawLine(gp, rPrev.x, rPrev.y, r.x, r.y, ci)
 					}
-					drawLine(p, rPrev.x, rPrev.y, r.x, r.y, ci)
+					rPrev = r
 				}
-				rPrev = r
 			}
-		}
-		ims[f] = im
+			ims[f] = im
+			wg.Done()
+		}()
 	}
+	wg.Wait()
 
 	return nil
 }

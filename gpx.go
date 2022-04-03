@@ -44,16 +44,18 @@ var stravaTypeCodes = map[string]string{
 	"53": "VirtualRunning",
 }
 
-func parseGPX(r io.Reader) error {
+func parseGPX(r io.Reader) ([]*activity, error) {
 	buf, err := ioutil.ReadAll(r)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	g, err := gpx.ParseBytes(buf)
 	if err != nil {
-		return err
+		return nil, err
 	}
+
+	acts := make([]*activity, 0, len(g.Tracks))
 
 	for _, t := range g.Tracks {
 		sport := t.Type
@@ -101,8 +103,8 @@ func parseGPX(r io.Reader) error {
 			continue
 		}
 
-		activities = append(activities, act)
+		acts = append(acts, act)
 	}
 
-	return nil
+	return acts, nil
 }

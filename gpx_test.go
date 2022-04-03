@@ -7,8 +7,7 @@ import (
 
 func TestGPXStravaTypeCodes(t *testing.T) {
 	_ = sports.Set("running")
-	activities = activities[:0]
-	if err := parseGPX(bytes.NewBufferString(`
+	if acts, err := parseGPX(bytes.NewBufferString(`
 		<gpx creator="StravaGPX iPhone">
 		  <trk>
 		    <type>9</type>
@@ -23,8 +22,7 @@ func TestGPXStravaTypeCodes(t *testing.T) {
 		  </trk>
 		</gpx>`)); err != nil {
 		t.Fatal(err)
-	}
-	if len(activities) != 1 {
+	} else if len(acts) != 1 {
 		t.Fatal("expected 1 activity")
 	}
 }

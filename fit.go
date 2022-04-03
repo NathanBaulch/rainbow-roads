@@ -6,17 +6,17 @@ import (
 	"github.com/tormoder/fit"
 )
 
-func parseFIT(r io.Reader) error {
+func parseFIT(r io.Reader) ([]*activity, error) {
 	f, err := fit.Decode(r)
 	if err != nil {
 		if _, ok := err.(fit.FormatError); ok {
-			return nil
+			return nil, nil
 		}
-		return err
+		return nil, err
 	}
 
 	if a, err := f.Activity(); err != nil || len(a.Records) == 0 {
-		return nil
+		return nil, nil
 	} else {
 		act := &activity{
 			sport:    a.Sessions[0].Sport.String(),
@@ -27,7 +27,7 @@ func parseFIT(r io.Reader) error {
 			!includeTimestamp(r0.Timestamp, r1.Timestamp) ||
 			!includeDuration(r1.Timestamp.Sub(r0.Timestamp)) ||
 			!includeDistance(act.distance) {
-			return nil
+			return nil, nil
 		}
 		act.records = make([]*record, 0, len(a.Records))
 		for _, r := range a.Records {
@@ -39,9 +39,9 @@ func parseFIT(r io.Reader) error {
 				})
 			}
 		}
-		if len(act.records) > 0 {
-			activities = append(activities, act)
+		if len(act.records) == 0 {
+			return nil, nil
 		}
-		return nil
+		return []*activity{act}, nil
 	}
 }

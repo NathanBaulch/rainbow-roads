@@ -7,8 +7,7 @@ import (
 
 func TestTCXNoPosition(t *testing.T) {
 	sports = sports[:0]
-	activities = activities[:0]
-	if err := parseTCX(bytes.NewBufferString(`
+	if acts, err := parseTCX(bytes.NewBufferString(`
 		<TrainingCenterDatabase>
 		  <Activities>
 		    <Activity>
@@ -23,8 +22,7 @@ func TestTCXNoPosition(t *testing.T) {
 		  </Activities>
 		</TrainingCenterDatabase>`)); err != nil {
 		t.Fatal(err)
-	}
-	if len(activities) > 0 {
+	} else if len(acts) > 0 {
 		t.Fatal("expected no activities")
 	}
 }

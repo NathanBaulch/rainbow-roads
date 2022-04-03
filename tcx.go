@@ -6,11 +6,13 @@ import (
 	"github.com/llehouerou/go-tcx"
 )
 
-func parseTCX(r io.Reader) error {
+func parseTCX(r io.Reader) ([]*activity, error) {
 	f, err := tcx.Parse(r)
 	if err != nil {
-		return err
+		return nil, err
 	}
+
+	acts := make([]*activity, 0, len(f.Activities))
 
 	for _, a := range f.Activities {
 		if len(a.Laps) == 0 || !includeSport(a.Sport) {
@@ -53,8 +55,8 @@ func parseTCX(r io.Reader) error {
 			continue
 		}
 
-		activities = append(activities, act)
+		acts = append(acts, act)
 	}
 
-	return nil
+	return acts, nil
 }
