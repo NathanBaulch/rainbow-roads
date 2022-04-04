@@ -23,6 +23,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/StephaneBunel/bresenham"
 	"github.com/kettek/apng"
 	"github.com/schollz/progressbar"
 	"golang.org/x/text/language"
@@ -64,7 +65,7 @@ var (
 	maxDur         time.Duration
 	minLat, minLon = math.MaxFloat64, math.MaxFloat64
 	maxLat, maxLon = -math.MaxFloat64, -math.MaxFloat64
-	ims            []*image.Paletted
+	images         []*image.Paletted
 )
 
 func init() {
@@ -557,23 +558,27 @@ func render() error {
 	pal[len(pal)-2] = color.Black
 	pal[len(pal)-1] = color.Transparent
 
-	bg := image.NewPaletted(image.Rect(0, 0, int(width), int(height)), pal)
-	drawFill(bg, uint8(len(pal)-2))
-	if !noWatermark {
-		drawString(bg, fullTitle, uint8(len(pal)/2))
+	images = make([]*image.Paletted, frames)
+	for i := range images {
+		im := image.NewPaletted(image.Rect(0, 0, int(width), int(height)), pal)
+		if i == 0 {
+			drawFill(im, uint8(len(pal)-2))
+			if !noWatermark {
+				drawString(im, fullTitle, uint8(len(pal)/2))
+			}
+		} else {
+			copy(im.Pix, images[0].Pix)
+		}
+		images[i] = im
 	}
-
-	ims = make([]*image.Paletted, frames)
 
 	wg := &sync.WaitGroup{}
 	wg.Add(int(frames))
 	for ff := uint(0); ff < frames; ff++ {
 		f := ff
 		go func() {
-			im := image.NewPaletted(bg.Rect, pal)
-			copy(im.Pix, bg.Pix)
 			fp := float64(f+1) / float64(frames)
-			gp := &glowPlotter{im}
+			gp := &glowPlotter{images[f]}
 			for _, act := range activities {
 				var rPrev *record
 				for _, r := range act.records {
@@ -589,12 +594,11 @@ func render() error {
 						if pp >= 0 && pp < 1 {
 							ci = uint8(math.Sqrt(pp) * float64(len(pal)-2))
 						}
-						drawLine(gp, rPrev.x, rPrev.y, r.x, r.y, ci)
+						bresenham.DrawLine(gp, rPrev.x, rPrev.y, r.x, r.y, grays[ci])
 					}
 					rPrev = r
 				}
 			}
-			ims[f] = im
 			wg.Done()
 		}()
 	}
@@ -608,7 +612,10 @@ type glowPlotter struct {
 }
 
 func (p *glowPlotter) Set(x, y int, c color.Color) {
-	ci := c.(color.Gray).Y
+	p.SetColorIndex(x, y, c.(color.Gray).Y)
+}
+
+func (p *glowPlotter) SetColorIndex(x, y int, ci uint8) {
 	if p.setPixIfLower(x, y, ci) {
 		const sqrt2 = 1.414213562
 		if i := float64(ci) * sqrt2; i < float64(len(p.Palette)-2) {
@@ -669,19 +676,19 @@ func save() error {
 }
 
 func saveGIF(w io.Writer) error {
-	optimizeFrames(ims)
+	optimizeFrames(images)
 	g := &gif.GIF{
-		Image:    ims,
-		Delay:    make([]int, len(ims)),
-		Disposal: make([]byte, len(ims)),
+		Image:    images,
+		Delay:    make([]int, len(images)),
+		Disposal: make([]byte, len(images)),
 		Config: image.Config{
-			ColorModel: ims[0].Palette,
-			Width:      ims[0].Rect.Max.X,
-			Height:     ims[0].Rect.Max.Y,
+			ColorModel: images[0].Palette,
+			Width:      images[0].Rect.Max.X,
+			Height:     images[0].Rect.Max.Y,
 		},
 	}
 	d := int(math.Round(100 / float64(fps)))
-	for i := range ims {
+	for i := range images {
 		g.Disposal[i] = gif.DisposalNone
 		g.Delay[i] = d
 	}
@@ -689,9 +696,9 @@ func saveGIF(w io.Writer) error {
 }
 
 func savePNG(w io.Writer) error {
-	optimizeFrames(ims)
-	a := apng.APNG{Frames: make([]apng.Frame, len(ims))}
-	for i, im := range ims {
+	optimizeFrames(images)
+	a := apng.APNG{Frames: make([]apng.Frame, len(images))}
+	for i, im := range images {
 		a.Frames[i].Image = im
 		a.Frames[i].XOffset = im.Rect.Min.X
 		a.Frames[i].YOffset = im.Rect.Min.Y
@@ -709,7 +716,7 @@ func saveZIP(w io.Writer) error {
 			log.Fatal(err)
 		}
 	}()
-	for i, im := range ims {
+	for i, im := range images {
 		if w, err := z.Create(fmt.Sprintf("%d.gif", i)); err != nil {
 			return err
 		} else if err = gif.Encode(w, im, nil); err != nil {
