@@ -220,6 +220,32 @@ func (d *DistanceFlag) String() string {
 	return formatFloat(float64(*d))
 }
 
+type PaceFlag struct{ time.Duration }
+
+var paceRE = regexp.MustCompile(`^([^/]+)(/([^/]+))?$`)
+
+func (p *PaceFlag) Set(str string) error {
+	if str == "" {
+		return errors.New("unexpected empty value")
+	}
+	if m := paceRE.FindStringSubmatch(str); len(m) != 4 {
+		return errors.New("format not recognized")
+	} else if d, err := time.ParseDuration(m[1]); err != nil {
+		return errors.New(fmt.Sprintf("duration %q not recognized", m[1]))
+	} else if d <= 0 {
+		return errors.New("must be positive")
+	} else if m[3] == "" || strings.EqualFold(m[3], units.Meter.Symbol) {
+		*p = PaceFlag{d}
+	} else if u, err := units.Find(m[3]); err != nil {
+		return errors.New(fmt.Sprintf("unit %q not recognized", m[3]))
+	} else if v, err := units.ConvertFloat(float64(d), units.Meter, u); err != nil {
+		return errors.New(fmt.Sprintf("unit %q not a distance", m[3]))
+	} else {
+		*p = PaceFlag{time.Duration(v.Float())}
+	}
+	return nil
+}
+
 type RegionFlag struct{ Region }
 
 func (r *RegionFlag) Set(str string) error {
@@ -242,8 +268,6 @@ func (r *RegionFlag) Set(str string) error {
 		if len(parts) == 3 {
 			if radius, err = parseDistance(parts[2]); err != nil {
 				return errors.New("radius " + err.Error())
-			} else if radius <= 0 {
-				return errors.New(fmt.Sprintf("radius %q must be positive", formatFloat(radius)))
 			}
 		}
 		r.radius = radius
@@ -258,6 +282,8 @@ func parseDistance(str string) (float64, error) {
 		return 0, errors.New("format not recognized")
 	} else if f, err := strconv.ParseFloat(m[1], 64); err != nil {
 		return 0, errors.New(fmt.Sprintf("number %q not recognized", m[1]))
+	} else if f < 0 {
+		return 0, errors.New("must be positive")
 	} else if m[2] == "" || strings.EqualFold(m[2], units.Meter.Symbol) {
 		return f, nil
 	} else if u, err := units.Find(m[2]); err != nil {

@@ -54,6 +54,8 @@ var (
 	maxDuration   DurationFlag
 	minDistance   DistanceFlag
 	maxDistance   DistanceFlag
+	minPace       PaceFlag
+	maxPace       PaceFlag
 	startsNear    RegionFlag
 	endsNear      RegionFlag
 	passesThrough RegionFlag
@@ -103,6 +105,8 @@ func main() {
 	filters.Var(&maxDuration, "max_duration", "longest `duration` of included activities, eg 1h")
 	filters.Var(&minDistance, "min_distance", "shortest `distance` of included activities, eg 2km")
 	filters.Var(&maxDistance, "max_distance", "greatest `distance` of included activities, eg 10mi")
+	filters.Var(&minPace, "min_pace", "slowest `pace` of included activities, eg 8km/h")
+	filters.Var(&maxPace, "max_pace", "fastest `pace` of included activities, eg 10min/mi")
 	filters.Var(&startsNear, "starts_near", "`region` that activities must start from, eg 51.53,-0.21,1km")
 	filters.Var(&endsNear, "ends_near", "`region` that activities must end in, eg 30.06,31.22,1km")
 	filters.Var(&passesThrough, "passes_through", "`region` that activities must pass through, eg 40.69,-74.12,10mi")
@@ -322,6 +326,7 @@ func parse() error {
 	minDur := time.Duration(math.MaxInt64)
 	var minDate, maxDate time.Time
 	minDist, maxDist := math.MaxFloat64, 0.0
+	minP, maxP := time.Duration(math.MaxInt64), time.Duration(0)
 	sumPts := 0
 	var sumDur time.Duration
 	sumDist := 0.0
@@ -378,6 +383,13 @@ func parse() error {
 		if act.distance > maxDist {
 			maxDist = act.distance
 		}
+		pace := dur / time.Duration(act.distance)
+		if pace < minP {
+			minP = pace
+		}
+		if pace > maxP {
+			maxP = pace
+		}
 
 		sumPts += len(act.records)
 		sumDur += dur
@@ -406,10 +418,12 @@ func parse() error {
 	p.Printf("period:         %s\n", sprintPeriod(p, minDate, maxDate))
 	p.Printf("duration range: %s to %s\n", minDur, maxDur)
 	p.Printf("distance range: %.1fkm to %.1fkm\n", minDist/1000, maxDist/1000)
+	p.Printf("pace range:     %s/km to %s/km\n", (minP * 1000).Truncate(time.Second), (maxP * 1000).Truncate(time.Second))
 	p.Printf("bounds:         %s\n", &Region{lat, lon, radius})
 	p.Printf("total points:   %d\n", sumPts)
 	p.Printf("total duration: %s\n", sumDur)
 	p.Printf("total distance: %.1fkm\n", sumDist/1000)
+	p.Printf("average pace:   %s/km\n", (sumDur * 1000 / time.Duration(sumDist)).Truncate(time.Second))
 	return nil
 }
 
@@ -505,6 +519,19 @@ func includeDistance(distance float64) bool {
 		return false
 	}
 	if maxDistance != 0 && distance > float64(maxDistance) {
+		return false
+	}
+	return true
+}
+
+func includePace(pace time.Duration) bool {
+	if pace == 0 {
+		return false
+	}
+	if min := minPace.Duration; min != 0 && pace < min {
+		return false
+	}
+	if max := maxPace.Duration; max != 0 && pace > max {
 		return false
 	}
 	return true

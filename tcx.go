@@ -2,6 +2,7 @@ package main
 
 import (
 	"io"
+	"time"
 
 	"github.com/llehouerou/go-tcx"
 )
@@ -48,10 +49,12 @@ func parseTCX(r io.Reader) ([]*activity, error) {
 			}
 		}
 
+		dur := t1.Time.Sub(t0.Time)
 		if len(act.records) == 0 ||
 			!includeTimestamp(t0.Time, t1.Time) ||
-			!includeDuration(t1.Time.Sub(t0.Time)) ||
-			!includeDistance(act.distance) {
+			!includeDuration(dur) ||
+			!includeDistance(act.distance) ||
+			!includePace(dur/time.Duration(act.distance)) {
 			continue
 		}
 

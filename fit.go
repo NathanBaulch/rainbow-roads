@@ -2,6 +2,7 @@ package main
 
 import (
 	"io"
+	"time"
 
 	"github.com/tormoder/fit"
 )
@@ -23,10 +24,12 @@ func parseFIT(r io.Reader) ([]*activity, error) {
 			distance: a.Sessions[0].GetTotalDistanceScaled(),
 		}
 		r0, r1 := a.Records[0], a.Records[len(a.Records)-1]
+		dur := r1.Timestamp.Sub(r0.Timestamp)
 		if !includeSport(act.sport) ||
 			!includeTimestamp(r0.Timestamp, r1.Timestamp) ||
-			!includeDuration(r1.Timestamp.Sub(r0.Timestamp)) ||
-			!includeDistance(act.distance) {
+			!includeDuration(dur) ||
+			!includeDistance(act.distance) ||
+			!includePace(dur/time.Duration(act.distance)) {
 			return nil, nil
 		}
 		act.records = make([]*record, 0, len(a.Records))

@@ -221,11 +221,48 @@ func TestDistanceSet(t *testing.T) {
 		{"f00", errors.New(`number "f00" not recognized`)},
 		{"3000x", errors.New(`unit "x" not recognized`)},
 		{"3000g", errors.New(`unit "g" not a distance`)},
+		{"-3000", errors.New(`must be positive`)},
 	}
 
 	for i, testCase := range testCases {
 		var f DistanceFlag
 		d := &f
+		if err := d.Set(testCase.set); err != nil {
+			if expectErr, ok := testCase.expect.(error); !ok {
+				t.Fatal("test case", i, "error:", err)
+			} else if !strings.Contains(err.Error(), expectErr.Error()) {
+				t.Fatal("test case", i, "failed:", err, "!=", testCase.expect)
+			} else {
+				continue
+			}
+		}
+		actual := d.String()
+		if actual != testCase.expect {
+			t.Fatal("test case", i, "failed:", actual, "!=", testCase.expect)
+		}
+	}
+}
+
+func TestPaceFlag(t *testing.T) {
+	testCases := []struct {
+		set    string
+		expect interface{}
+	}{
+		{"1s", "1s"},
+		{"1m", "1m0s"},
+		{"1s/m", "1s"},
+		{"5m/km", "300ms"},
+		{"8m/mile", "298.258172ms"},
+		{"", errors.New("unexpected empty value")},
+		{"/", errors.New("format not recognized")},
+		{"foo", errors.New(`duration "foo" not recognized`)},
+		{"1s/x", errors.New(`unit "x" not recognized`)},
+		{"1s/g", errors.New(`unit "g" not a distance`)},
+		{"-1s", errors.New("must be positive")},
+	}
+
+	for i, testCase := range testCases {
+		d := &PaceFlag{}
 		if err := d.Set(testCase.set); err != nil {
 			if expectErr, ok := testCase.expect.(error); !ok {
 				t.Fatal("test case", i, "error:", err)
@@ -263,7 +300,7 @@ func TestRegionSet(t *testing.T) {
 		{"1,2,3000g", errors.New(`radius unit "g" not a distance`)},
 		{"100,0", errors.New(`latitude "100" not within range`)},
 		{"0,200", errors.New(`longitude "200" not within range`)},
-		{"1,2,-3", errors.New(`radius "-3" must be positive`)},
+		{"1,2,-3", errors.New(`radius must be positive`)},
 	}
 
 	for i, testCase := range testCases {

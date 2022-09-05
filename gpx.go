@@ -4,6 +4,7 @@ import (
 	"io"
 	"io/ioutil"
 	"strings"
+	"time"
 
 	"github.com/tkrajina/gpxgo/gpx"
 )
@@ -96,10 +97,12 @@ func parseGPX(r io.Reader) ([]*activity, error) {
 			}
 		}
 
+		dur := p1.Timestamp.Sub(p0.Timestamp)
 		if len(act.records) == 0 ||
 			!includeTimestamp(p0.Timestamp, p1.Timestamp) ||
-			!includeDuration(p1.Timestamp.Sub(p0.Timestamp)) ||
-			!includeDistance(act.distance) {
+			!includeDuration(dur) ||
+			!includeDistance(act.distance) ||
+			!includePace(dur/time.Duration(act.distance)) {
 			continue
 		}
 
