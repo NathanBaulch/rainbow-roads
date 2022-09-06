@@ -31,6 +31,8 @@ duration range: 16m1s to 1h38m27s
 distance range: 3.0km to 16.8km
 pace range:     4m25s/km to 9m21s/km
 bounds:         -37.8,144.9,4987.12259
+starts within:  -37.8,144.9,4807.96373
+ends within:    -37.8,144.9,4912.4696
 total points:   154,326
 total duration: 206h20m19s
 total distance: 2,102.2km

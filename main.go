@@ -329,6 +329,7 @@ func parse() error {
 	sumPts := 0
 	var sumDur time.Duration
 	sumDist := 0.0
+	var startBox, endBox Box
 	for i := len(activities) - 1; i >= 0; i-- {
 		act := activities[i]
 		include := passesThrough.IsZero()
@@ -397,6 +398,8 @@ func parse() error {
 		for _, r := range act.records {
 			box = box.Enclose(r.pt)
 		}
+		startBox = startBox.Enclose(act.records[0].pt)
+		endBox = endBox.Enclose(act.records[len(act.records)-1].pt)
 	}
 
 	if len(activities) == 0 {
@@ -404,10 +407,14 @@ func parse() error {
 	}
 
 	bounds := Circle{center: box.Center()}
+	starts := Circle{center: startBox.Center()}
+	ends := Circle{center: endBox.Center()}
 	for _, act := range activities {
 		for _, r := range act.records {
 			bounds = bounds.Enclose(r.pt)
 		}
+		starts = starts.Enclose(act.records[0].pt)
+		ends = ends.Enclose(act.records[len(act.records)-1].pt)
 	}
 
 	p.Printf("activities:     %d\n", len(activities))
@@ -417,6 +424,8 @@ func parse() error {
 	p.Printf("distance range: %.1fkm to %.1fkm\n", minDist/1000, maxDist/1000)
 	p.Printf("pace range:     %s/km to %s/km\n", (minP * 1000).Truncate(time.Second), (maxP * 1000).Truncate(time.Second))
 	p.Printf("bounds:         %s\n", bounds)
+	p.Printf("starts within:  %s\n", starts)
+	p.Printf("ends within:    %s\n", ends)
 	p.Printf("total points:   %d\n", sumPts)
 	p.Printf("total duration: %s\n", sumDur)
 	p.Printf("total distance: %.1fkm\n", sumDist/1000)
