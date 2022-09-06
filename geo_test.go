@@ -18,7 +18,7 @@ func TestMercatorMeters(t *testing.T) {
 		{-80, 0},
 	}
 	for i, testCase := range testCases {
-		x, y := mercatorMeters(degreesToRadians(testCase.lat), degreesToRadians(testCase.lon))
+		x, y := mercatorMeters(newPointFromDegrees(testCase.lat, testCase.lon))
 		if math.IsNaN(x) {
 			t.Fatal("test case", i, "failed: expected x number")
 		}

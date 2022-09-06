@@ -56,18 +56,17 @@ var (
 	maxDistance   DistanceFlag
 	minPace       PaceFlag
 	maxPace       PaceFlag
-	startsNear    RegionFlag
-	endsNear      RegionFlag
-	passesThrough RegionFlag
-	boundedBy     RegionFlag
+	startsNear    CircleFlag
+	endsNear      CircleFlag
+	passesThrough CircleFlag
+	boundedBy     CircleFlag
 
-	p              = message.NewPrinter(language.English)
-	files          []*file
-	activities     []*activity
-	maxDur         time.Duration
-	minLat, minLon = math.MaxFloat64, math.MaxFloat64
-	maxLat, maxLon = -math.MaxFloat64, -math.MaxFloat64
-	images         []*image.Paletted
+	p          = message.NewPrinter(language.English)
+	files      []*file
+	activities []*activity
+	maxDur     time.Duration
+	box        Box
+	images     []*image.Paletted
 )
 
 func init() {
@@ -335,19 +334,19 @@ func parse() error {
 		include := passesThrough.IsZero()
 		exclude := false
 		for j, r := range act.records {
-			if j == 0 && !startsNear.IsZero() && !startsNear.Contains(r.lat, r.lon) {
+			if j == 0 && !startsNear.IsZero() && !startsNear.Contains(r.pt) {
 				exclude = true
 				break
 			}
-			if j == len(act.records)-1 && !endsNear.IsZero() && !endsNear.Contains(r.lat, r.lon) {
+			if j == len(act.records)-1 && !endsNear.IsZero() && !endsNear.Contains(r.pt) {
 				exclude = true
 				break
 			}
-			if !boundedBy.IsZero() && !boundedBy.Contains(r.lat, r.lon) {
+			if !boundedBy.IsZero() && !boundedBy.Contains(r.pt) {
 				exclude = true
 				break
 			}
-			if !include && passesThrough.Contains(r.lat, r.lon) {
+			if !include && passesThrough.Contains(r.pt) {
 				include = true
 			}
 		}
@@ -396,8 +395,7 @@ func parse() error {
 		sumDist += act.distance
 
 		for _, r := range act.records {
-			minLat, minLon = math.Min(minLat, r.lat), math.Min(minLon, r.lon)
-			maxLat, maxLon = math.Max(maxLat, r.lat), math.Max(maxLon, r.lon)
+			box = box.Enclose(r.pt)
 		}
 	}
 
@@ -405,11 +403,10 @@ func parse() error {
 		return errors.New("no matching activities found")
 	}
 
-	lat, lon := (maxLat+minLat)/2, (maxLon+minLon)/2
-	radius := 0.0
+	bounds := Circle{center: box.Center()}
 	for _, act := range activities {
 		for _, r := range act.records {
-			radius = math.Max(radius, haversineDistance(lat, lon, r.lat, r.lon))
+			bounds = bounds.Enclose(r.pt)
 		}
 	}
 
@@ -419,7 +416,7 @@ func parse() error {
 	p.Printf("duration range: %s to %s\n", minDur, maxDur)
 	p.Printf("distance range: %.1fkm to %.1fkm\n", minDist/1000, maxDist/1000)
 	p.Printf("pace range:     %s/km to %s/km\n", (minP * 1000).Truncate(time.Second), (maxP * 1000).Truncate(time.Second))
-	p.Printf("bounds:         %s\n", &Region{lat, lon, radius})
+	p.Printf("bounds:         %s\n", bounds)
 	p.Printf("total points:   %d\n", sumPts)
 	p.Printf("total duration: %s\n", sumDur)
 	p.Printf("total distance: %.1fkm\n", sumDist/1000)
@@ -544,10 +541,10 @@ type activity struct {
 }
 
 type record struct {
-	ts       time.Time
-	lat, lon float64
-	x, y     int
-	p        float64
+	ts   time.Time
+	pt   Point
+	x, y int
+	pc   float64
 }
 
 func render() error {
@@ -555,26 +552,26 @@ func render() error {
 		sort.Slice(activities, func(i, j int) bool { return activities[i].records[0].ts.Before(activities[j].records[0].ts) })
 	}
 
-	minX, minY := mercatorMeters(minLat, minLon)
-	maxX, maxY := mercatorMeters(maxLat, maxLon)
+	minX, minY := mercatorMeters(box.min)
+	maxX, maxY := mercatorMeters(box.max)
 	dX, dY := maxX-minX, maxY-minY
 	scale := float64(width) / dX
 	height := uint(dY * scale)
 	scale *= 0.9
 	minX -= 0.05 * dX
 	maxY += 0.05 * dY
-	pScale := 1 / (speed * float64(maxDur))
+	tScale := 1 / (speed * float64(maxDur))
 	for i, act := range activities {
 		ts0 := act.records[0].ts
-		pOffset := 0.0
+		tOffset := 0.0
 		if loop {
-			pOffset = float64(i) / float64(len(activities))
+			tOffset = float64(i) / float64(len(activities))
 		}
 		for _, r := range act.records {
-			x, y := mercatorMeters(r.lat, r.lon)
+			x, y := mercatorMeters(r.pt)
 			r.x = int((x - minX) * scale)
 			r.y = int((maxY - y) * scale)
-			r.p = pOffset + float64(r.ts.Sub(ts0))*pScale
+			r.pc = tOffset + float64(r.ts.Sub(ts0))*tScale
 		}
 	}
 
@@ -604,22 +601,22 @@ func render() error {
 	for ff := uint(0); ff < frames; ff++ {
 		f := ff
 		go func() {
-			fp := float64(f+1) / float64(frames)
+			fpc := float64(f+1) / float64(frames)
 			gp := &glowPlotter{images[f]}
 			for _, act := range activities {
 				var rPrev *record
 				for _, r := range act.records {
-					pp := fp - r.p
-					if pp < 0 {
+					pc := fpc - r.pc
+					if pc < 0 {
 						if !loop {
 							break
 						}
-						pp++
+						pc++
 					}
 					if rPrev != nil && (r.x != rPrev.x || r.y != rPrev.y) {
 						ci := uint8(len(pal) - 3)
-						if pp >= 0 && pp < 1 {
-							ci = uint8(math.Sqrt(pp) * float64(len(pal)-2))
+						if pc >= 0 && pc < 1 {
+							ci = uint8(math.Sqrt(pc) * float64(len(pal)-2))
 						}
 						bresenham.DrawLine(gp, rPrev.x, rPrev.y, r.x, r.y, grays[ci])
 					}

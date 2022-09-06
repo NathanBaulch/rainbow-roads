@@ -36,9 +36,8 @@ func parseFIT(r io.Reader) ([]*activity, error) {
 		for _, r := range a.Records {
 			if !r.PositionLat.Invalid() && !r.PositionLong.Invalid() {
 				act.records = append(act.records, &record{
-					ts:  r.Timestamp,
-					lat: semicirclesToRadians(r.PositionLat.Semicircles()),
-					lon: semicirclesToRadians(r.PositionLong.Semicircles()),
+					ts: r.Timestamp,
+					pt: newPointFromSemicircles(r.PositionLat.Semicircles(), r.PositionLong.Semicircles()),
 				})
 			}
 		}

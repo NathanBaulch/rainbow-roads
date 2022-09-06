@@ -246,9 +246,9 @@ func (p *PaceFlag) Set(str string) error {
 	return nil
 }
 
-type RegionFlag struct{ Region }
+type CircleFlag struct{ Circle }
 
-func (r *RegionFlag) Set(str string) error {
+func (c *CircleFlag) Set(str string) error {
 	if str == "" {
 		return errors.New("unexpected empty value")
 	}
@@ -263,14 +263,14 @@ func (r *RegionFlag) Set(str string) error {
 	} else if lon < -180 || lon > 180 {
 		return errors.New(fmt.Sprintf("longitude %q not within range", formatFloat(lon)))
 	} else {
-		r.lat, r.lon = degreesToRadians(lat), degreesToRadians(lon)
+		c.center = newPointFromDegrees(lat, lon)
 		radius := 100.0
 		if len(parts) == 3 {
 			if radius, err = parseDistance(parts[2]); err != nil {
 				return errors.New("radius " + err.Error())
 			}
 		}
-		r.radius = radius
+		c.radius = radius
 		return nil
 	}
 }

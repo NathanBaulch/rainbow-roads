@@ -86,13 +86,11 @@ func parseGPX(r io.Reader) ([]*activity, error) {
 				}
 				p1 = p
 				act.records = append(act.records, &record{
-					ts:  p.Timestamp,
-					lat: degreesToRadians(p.Latitude),
-					lon: degreesToRadians(p.Longitude),
+					ts: p.Timestamp,
+					pt: newPointFromDegrees(p.Latitude, p.Longitude),
 				})
 				if i > 0 {
-					r0, r1 := act.records[i-1], act.records[i]
-					act.distance += haversineDistance(r0.lat, r0.lon, r1.lat, r1.lon)
+					act.distance += haversineDistance(act.records[i-1].pt, act.records[i].pt)
 				}
 			}
 		}

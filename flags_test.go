@@ -304,36 +304,36 @@ func TestRegionSet(t *testing.T) {
 	}
 
 	for i, testCase := range testCases {
-		r := &RegionFlag{}
-		if err := r.Set(testCase.set); err != nil {
+		c := &CircleFlag{}
+		if err := c.Set(testCase.set); err != nil {
 			if expectErr, ok := testCase.expect.(error); !ok {
 				t.Fatal("test case", i, "error:", err)
 			} else if !strings.Contains(err.Error(), expectErr.Error()) {
 				t.Fatal("test case", i, "failed:", err, "!=", testCase.expect)
-			} else if !r.IsZero() {
+			} else if !c.IsZero() {
 				t.Fatal("test case", i, "expected zero")
 			} else {
 				continue
 			}
 		}
-		actual := r.String()
+		actual := c.String()
 		if actual != testCase.expect {
 			t.Fatal("test case", i, "failed:", actual, "!=", testCase.expect)
-		} else if r.IsZero() {
+		} else if c.IsZero() {
 			t.Fatal("test case", i, "expected not zero")
 		}
 	}
 }
 
 func TestRegionContains(t *testing.T) {
-	r := &RegionFlag{}
-	if err := r.Set("1,2,3"); err != nil {
+	c := &CircleFlag{}
+	if err := c.Set("1,2,3"); err != nil {
 		t.Fatal(err)
 	}
-	if !r.Contains(0.0174536, 0.0349068) {
+	if !c.Contains(Point{lat: 0.0174536, lon: 0.0349068}) {
 		t.Fatal("expected contains")
 	}
-	if r.Contains(0.0174537, 0.0349069) {
+	if c.Contains(Point{lat: 0.0174537, lon: 0.0349069}) {
 		t.Fatal("expected not contains")
 	}
 }

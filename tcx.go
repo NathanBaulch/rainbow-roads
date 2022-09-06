@@ -42,9 +42,8 @@ func parseTCX(r io.Reader) ([]*activity, error) {
 				}
 				t1 = t
 				act.records = append(act.records, &record{
-					ts:  t.Time,
-					lat: degreesToRadians(t.LatitudeInDegrees),
-					lon: degreesToRadians(t.LongitudeInDegrees),
+					ts: t.Time,
+					pt: newPointFromDegrees(t.LatitudeInDegrees, t.LongitudeInDegrees),
 				})
 			}
 		}
