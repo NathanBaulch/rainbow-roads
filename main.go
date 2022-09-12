@@ -326,7 +326,7 @@ func parse() error {
 	var minDate, maxDate time.Time
 	minDist, maxDist := math.MaxFloat64, 0.0
 	minP, maxP := time.Duration(math.MaxInt64), time.Duration(0)
-	sumPts := 0
+	sumRec := 0
 	var sumDur time.Duration
 	sumDist := 0.0
 	var startBox, endBox Box
@@ -391,7 +391,7 @@ func parse() error {
 			maxP = pace
 		}
 
-		sumPts += len(act.records)
+		sumRec += len(act.records)
 		sumDur += dur
 		sumDist += act.distance
 
@@ -417,19 +417,16 @@ func parse() error {
 		ends = ends.Enclose(act.records[len(act.records)-1].pt)
 	}
 
-	p.Printf("activities:     %d\n", len(activities))
-	p.Printf("sports:         %s\n", sprintSportStats(p, sportStats))
-	p.Printf("period:         %s\n", sprintPeriod(p, minDate, maxDate))
-	p.Printf("duration range: %s to %s\n", minDur, maxDur)
-	p.Printf("distance range: %.1fkm to %.1fkm\n", minDist/1000, maxDist/1000)
-	p.Printf("pace range:     %s/km to %s/km\n", (minP * 1000).Truncate(time.Second), (maxP * 1000).Truncate(time.Second))
-	p.Printf("bounds:         %s\n", bounds)
-	p.Printf("starts within:  %s\n", starts)
-	p.Printf("ends within:    %s\n", ends)
-	p.Printf("total points:   %d\n", sumPts)
-	p.Printf("total duration: %s\n", sumDur)
-	p.Printf("total distance: %.1fkm\n", sumDist/1000)
-	p.Printf("average pace:   %s/km\n", (sumDur * 1000 / time.Duration(sumDist)).Truncate(time.Second))
+	p.Printf("activities:    %d\n", len(activities))
+	p.Printf("records:       %d\n", sumRec)
+	p.Printf("sports:        %s\n", sprintSportStats(p, sportStats))
+	p.Printf("period:        %s\n", sprintPeriod(p, minDate, maxDate))
+	p.Printf("duration:      %s to %s, average %s, total %s\n", minDur, maxDur, (sumDur / time.Duration(len(activities))).Truncate(time.Second), sumDur)
+	p.Printf("distance:      %.1fkm to %.1fkm, average %.1fkm, total %.1fkm\n", minDist/1000, maxDist/1000, sumDist/float64(len(activities))/1000, sumDist/1000)
+	p.Printf("pace:          %s/km to %s/km, average %s/km\n", (minP * 1000).Truncate(time.Second), (maxP * 1000).Truncate(time.Second), (sumDur * 1000 / time.Duration(sumDist)).Truncate(time.Second))
+	p.Printf("bounds:        %s\n", bounds)
+	p.Printf("starts within: %s\n", starts)
+	p.Printf("ends within:   %s\n", ends)
 	return nil
 }
 

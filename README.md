@@ -24,19 +24,16 @@ Some basic statistics are output to help validate the activities that were inclu
 ```text
 activity files: 9,327
  100% |████████████████████████████████████████| [3s:0s]            
-activities:     268
-sports:         running (268)
-period:         1.6 years (2020-08-02 to 2022-02-24)
-duration range: 16m1s to 1h38m27s
-distance range: 3.0km to 16.8km
-pace range:     4m25s/km to 9m21s/km
-bounds:         -37.8,144.9,4987.12259
-starts within:  -37.8,144.9,4807.96373
-ends within:    -37.8,144.9,4912.4696
-total points:   154,326
-total duration: 206h20m19s
-total distance: 2,102.2km
-average pace:   5m53s/km
+activities:    268
+records:       154,326
+sports:        running (268)
+period:        1.6 years (2020-08-02 to 2022-02-24)
+duration:      16m1s to 1h38m27s, average 46m11s, total 206h20m19s
+distance:      3.0km to 16.8km, average 7.8km, total 2,102.2km
+pace:          4m25s/km to 9m21s/km, average 5m53s/km
+bounds:        -37.8,144.9,4987.12259
+starts within: -37.8,144.9,4807.96373
+ends within:   -37.8,144.9,4912.4696
 ```
 The easiest way to find the coordinates of a known location is to right-click on it in Google Maps and select the first menu item.
 
