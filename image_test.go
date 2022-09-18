@@ -38,8 +38,8 @@ func TestImageOptimizeFrames(t *testing.T) {
 			t.Fatal("unexpected frame", i, "size: ", ims[i].Rect, "!=", expect.size)
 		}
 		pix := make([]uint8, -ims[i].PixOffset(0, 0))
-		for i := range pix {
-			pix[i] = 2
+		for j := range pix {
+			pix[j] = 2
 		}
 		pix = append(pix, ims[i].Pix...)
 		if !bytes.Equal(pix, expect.pix) {

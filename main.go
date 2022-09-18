@@ -13,7 +13,6 @@ import (
 	"image/gif"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"log"
 	"math"
 	"os"
@@ -37,9 +36,9 @@ var (
 
 	input       []string
 	output      string
+	width       uint
 	frames      uint
 	fps         uint
-	width       uint
 	format      = NewFormatFlag("gif", "png", "zip")
 	colors      ColorsFlag
 	colorDepth  uint
@@ -56,12 +55,12 @@ var (
 	maxDistance   DistanceFlag
 	minPace       PaceFlag
 	maxPace       PaceFlag
+	boundedBy     CircleFlag
 	startsNear    CircleFlag
 	endsNear      CircleFlag
 	passesThrough CircleFlag
-	boundedBy     CircleFlag
 
-	p          = message.NewPrinter(language.English)
+	en         = message.NewPrinter(language.English)
 	files      []*file
 	activities []*activity
 	maxDur     time.Duration
@@ -106,10 +105,10 @@ func main() {
 	filters.Var(&maxDistance, "max_distance", "greatest `distance` of included activities, eg 10mi")
 	filters.Var(&minPace, "min_pace", "slowest `pace` of included activities, eg 8km/h")
 	filters.Var(&maxPace, "max_pace", "fastest `pace` of included activities, eg 10min/mi")
+	filters.Var(&boundedBy, "bounded_by", "`region` that activities must be fully contained within, eg -37.8,144.9,10km")
 	filters.Var(&startsNear, "starts_near", "`region` that activities must start from, eg 51.53,-0.21,1km")
 	filters.Var(&endsNear, "ends_near", "`region` that activities must end in, eg 30.06,31.22,1km")
 	filters.Var(&passesThrough, "passes_through", "`region` that activities must pass through, eg 40.69,-74.12,10mi")
-	filters.Var(&boundedBy, "bounded_by", "`region` that activities must be fully contained within, eg -37.8,144.9,10km")
 	filters.VisitAll(func(f *flag.Flag) { flag.Var(f.Value, f.Name, f.Usage) })
 
 	flag.Usage = func() {
@@ -143,7 +142,7 @@ func main() {
 		invalidFlag("speed", "must be greater than or equal to 1")
 	}
 
-	p.Println(shortTitle)
+	en.Println(shortTitle)
 
 	input = flag.Args()
 	if len(input) == 0 {
@@ -186,7 +185,7 @@ func scan() error {
 			var err error
 			if paths, err = filepath.Glob(in); err != nil {
 				if err == filepath.ErrBadPattern {
-					return errors.New(fmt.Sprintf("input path pattern %q malformed", in))
+					return fmt.Errorf("input path pattern %q malformed", in)
 				}
 				return err
 			}
@@ -200,7 +199,7 @@ func scan() error {
 			fsys := os.DirFS(dir)
 			if fi, err := os.Stat(path); err != nil {
 				if _, ok := err.(*fs.PathError); ok {
-					return errors.New(fmt.Sprintf("input path %q not found", path))
+					return fmt.Errorf("input path %q not found", path)
 				}
 				return err
 			} else if fi.IsDir() {
@@ -220,7 +219,7 @@ func scan() error {
 		}
 	}
 
-	p.Println("activity files:", len(files))
+	en.Println("activity files:", len(files))
 	return nil
 }
 
@@ -234,7 +233,7 @@ func scanFile(fsys fs.FS, path string) error {
 		} else {
 			r, ok := f.(io.ReaderAt)
 			if !ok {
-				if b, err := ioutil.ReadAll(f); err != nil {
+				if b, err := io.ReadAll(f); err != nil {
 					return err
 				} else {
 					r = bytes.NewReader(b)
@@ -298,8 +297,8 @@ func parse() error {
 		acts []*activity
 		err  error
 	}, len(files))
-	for ii := range files {
-		i := ii
+	for i := range files {
+		i := i
 		go func() {
 			res[i].acts, res[i].err = files[i].parse()
 			_ = pb.Add(1)
@@ -406,9 +405,9 @@ func parse() error {
 		return errors.New("no matching activities found")
 	}
 
-	bounds := Circle{center: box.Center()}
-	starts := Circle{center: startBox.Center()}
-	ends := Circle{center: endBox.Center()}
+	bounds := Circle{origin: box.Center()}
+	starts := Circle{origin: startBox.Center()}
+	ends := Circle{origin: endBox.Center()}
 	for _, act := range activities {
 		for _, r := range act.records {
 			bounds = bounds.Enclose(r.pt)
@@ -417,16 +416,16 @@ func parse() error {
 		ends = ends.Enclose(act.records[len(act.records)-1].pt)
 	}
 
-	p.Printf("activities:    %d\n", len(activities))
-	p.Printf("records:       %d\n", sumRec)
-	p.Printf("sports:        %s\n", sprintSportStats(p, sportStats))
-	p.Printf("period:        %s\n", sprintPeriod(p, minDate, maxDate))
-	p.Printf("duration:      %s to %s, average %s, total %s\n", minDur, maxDur, (sumDur / time.Duration(len(activities))).Truncate(time.Second), sumDur)
-	p.Printf("distance:      %.1fkm to %.1fkm, average %.1fkm, total %.1fkm\n", minDist/1000, maxDist/1000, sumDist/float64(len(activities))/1000, sumDist/1000)
-	p.Printf("pace:          %s/km to %s/km, average %s/km\n", (minP * 1000).Truncate(time.Second), (maxP * 1000).Truncate(time.Second), (sumDur * 1000 / time.Duration(sumDist)).Truncate(time.Second))
-	p.Printf("bounds:        %s\n", bounds)
-	p.Printf("starts within: %s\n", starts)
-	p.Printf("ends within:   %s\n", ends)
+	en.Printf("activities:    %d\n", len(activities))
+	en.Printf("records:       %d\n", sumRec)
+	en.Printf("sports:        %s\n", sprintSportStats(en, sportStats))
+	en.Printf("period:        %s\n", sprintPeriod(en, minDate, maxDate))
+	en.Printf("duration:      %s to %s, average %s, total %s\n", minDur, maxDur, (sumDur / time.Duration(len(activities))).Truncate(time.Second), sumDur)
+	en.Printf("distance:      %.1fkm to %.1fkm, average %.1fkm, total %.1fkm\n", minDist/1000, maxDist/1000, sumDist/float64(len(activities))/1000, sumDist/1000)
+	en.Printf("pace:          %s/km to %s/km, average %s/km\n", (minP * 1000).Truncate(time.Second), (maxP * 1000).Truncate(time.Second), (sumDur * 1000 / time.Duration(sumDist)).Truncate(time.Second))
+	en.Printf("bounds:        %s\n", bounds)
+	en.Printf("starts within: %s\n", starts)
+	en.Printf("ends within:   %s\n", ends)
 	return nil
 }
 
@@ -604,8 +603,8 @@ func render() error {
 
 	wg := &sync.WaitGroup{}
 	wg.Add(int(frames))
-	for ff := uint(0); ff < frames; ff++ {
-		f := ff
+	for f := uint(0); f < frames; f++ {
+		f := f
 		go func() {
 			fpc := float64(f+1) / float64(frames)
 			gp := &glowPlotter{images[f]}

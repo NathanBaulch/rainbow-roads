@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -20,20 +21,22 @@ func TestFormatSet(t *testing.T) {
 	}
 
 	for i, testCase := range testCases {
-		f := NewFormatFlag("gif")
-		if err := f.Set(testCase.set); err != nil {
-			if expectErr, ok := testCase.expect.(error); !ok {
-				t.Fatal("test case", i, "error:", err)
-			} else if !strings.Contains(err.Error(), expectErr.Error()) {
-				t.Fatal("test case", i, "failed:", err, "!=", testCase.expect)
-			} else {
-				continue
+		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
+			f := NewFormatFlag("gif")
+			if err := f.Set(testCase.set); err != nil {
+				if expectErr, ok := testCase.expect.(error); !ok {
+					t.Fatal(err)
+				} else if !strings.Contains(err.Error(), expectErr.Error()) {
+					t.Fatal(err, "!=", testCase.expect)
+				} else {
+					return
+				}
 			}
-		}
-		actual := f.String()
-		if actual != testCase.expect {
-			t.Fatal("test case", i, "failed:", actual, "!=", testCase.expect)
-		}
+			actual := f.String()
+			if actual != testCase.expect {
+				t.Fatal(actual, "!=", testCase.expect)
+			}
+		})
 	}
 }
 
@@ -64,20 +67,22 @@ func TestColorsSet(t *testing.T) {
 	}
 
 	for i, testCase := range testCases {
-		g := &ColorsFlag{}
-		if err := g.Set(testCase.set); err != nil {
-			if expectErr, ok := testCase.expect.(error); !ok {
-				t.Fatal("test case", i, "error:", err)
-			} else if !strings.Contains(err.Error(), expectErr.Error()) {
-				t.Fatal("test case", i, "failed:", err, "!=", testCase.expect)
-			} else {
-				continue
+		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
+			g := &ColorsFlag{}
+			if err := g.Set(testCase.set); err != nil {
+				if expectErr, ok := testCase.expect.(error); !ok {
+					t.Fatal(err)
+				} else if !strings.Contains(err.Error(), expectErr.Error()) {
+					t.Fatal(err, "!=", testCase.expect)
+				} else {
+					return
+				}
 			}
-		}
-		actual := g.String()
-		if actual != testCase.expect {
-			t.Fatal("test case", i, "failed:", actual, "!=", testCase.expect)
-		}
+			actual := g.String()
+			if actual != testCase.expect {
+				t.Fatal(actual, "!=", testCase.expect)
+			}
+		})
 	}
 }
 
@@ -119,26 +124,28 @@ func TestSportsSet(t *testing.T) {
 	}
 
 	for i, testCase := range testCases {
-		s := &SportsFlag{}
-		for _, set := range testCase.sets {
-			if err := s.Set(set); err != nil {
-				if expectErr, ok := testCase.expect.(error); !ok {
-					t.Fatal("test case", i, "error:", err)
-				} else if !strings.Contains(err.Error(), expectErr.Error()) {
-					t.Fatal("test case", i, "failed:", err, "!=", testCase.expect)
-				} else {
-					s = nil
-					break
+		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
+			s := &SportsFlag{}
+			for _, set := range testCase.sets {
+				if err := s.Set(set); err != nil {
+					if expectErr, ok := testCase.expect.(error); !ok {
+						t.Fatal(err)
+					} else if !strings.Contains(err.Error(), expectErr.Error()) {
+						t.Fatal(err, "!=", testCase.expect)
+					} else {
+						s = nil
+						break
+					}
 				}
 			}
-		}
-		if s == nil {
-			continue
-		}
-		actual := s.String()
-		if actual != testCase.expect {
-			t.Fatal("test case", i, "failed:", actual, "!=", testCase.expect)
-		}
+			if s == nil {
+				return
+			}
+			actual := s.String()
+			if actual != testCase.expect {
+				t.Fatal(actual, "!=", testCase.expect)
+			}
+		})
 	}
 }
 
@@ -155,20 +162,22 @@ func TestTimeSet(t *testing.T) {
 	}
 
 	for i, testCase := range testCases {
-		f := &DateFlag{}
-		if err := f.Set(testCase.set); err != nil {
-			if expectErr, ok := testCase.expect.(error); !ok {
-				t.Fatal("test case", i, "error:", err)
-			} else if !strings.Contains(err.Error(), expectErr.Error()) {
-				t.Fatal("test case", i, "failed:", err, "!=", testCase.expect)
-			} else {
-				continue
+		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
+			f := &DateFlag{}
+			if err := f.Set(testCase.set); err != nil {
+				if expectErr, ok := testCase.expect.(error); !ok {
+					t.Fatal(err)
+				} else if !strings.Contains(err.Error(), expectErr.Error()) {
+					t.Fatal(err, "!=", testCase.expect)
+				} else {
+					return
+				}
 			}
-		}
-		actual := f.String()
-		if actual != testCase.expect {
-			t.Fatal("test case", i, "failed:", actual, "!=", testCase.expect)
-		}
+			actual := f.String()
+			if actual != testCase.expect {
+				t.Fatal(actual, "!=", testCase.expect)
+			}
+		})
 	}
 }
 
@@ -187,20 +196,22 @@ func TestDurationSet(t *testing.T) {
 	}
 
 	for i, testCase := range testCases {
-		d := &DurationFlag{}
-		if err := d.Set(testCase.set); err != nil {
-			if expectErr, ok := testCase.expect.(error); !ok {
-				t.Fatal("test case", i, "error:", err)
-			} else if !strings.Contains(err.Error(), expectErr.Error()) {
-				t.Fatal("test case", i, "failed:", err, "!=", testCase.expect)
-			} else {
-				continue
+		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
+			d := &DurationFlag{}
+			if err := d.Set(testCase.set); err != nil {
+				if expectErr, ok := testCase.expect.(error); !ok {
+					t.Fatal(err)
+				} else if !strings.Contains(err.Error(), expectErr.Error()) {
+					t.Fatal(err, "!=", testCase.expect)
+				} else {
+					return
+				}
 			}
-		}
-		actual := d.String()
-		if actual != testCase.expect {
-			t.Fatal("test case", i, "failed:", actual, "!=", testCase.expect)
-		}
+			actual := d.String()
+			if actual != testCase.expect {
+				t.Fatal(actual, "!=", testCase.expect)
+			}
+		})
 	}
 }
 
@@ -225,21 +236,23 @@ func TestDistanceSet(t *testing.T) {
 	}
 
 	for i, testCase := range testCases {
-		var f DistanceFlag
-		d := &f
-		if err := d.Set(testCase.set); err != nil {
-			if expectErr, ok := testCase.expect.(error); !ok {
-				t.Fatal("test case", i, "error:", err)
-			} else if !strings.Contains(err.Error(), expectErr.Error()) {
-				t.Fatal("test case", i, "failed:", err, "!=", testCase.expect)
-			} else {
-				continue
+		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
+			var f DistanceFlag
+			d := &f
+			if err := d.Set(testCase.set); err != nil {
+				if expectErr, ok := testCase.expect.(error); !ok {
+					t.Fatal(err)
+				} else if !strings.Contains(err.Error(), expectErr.Error()) {
+					t.Fatal(err, "!=", testCase.expect)
+				} else {
+					return
+				}
 			}
-		}
-		actual := d.String()
-		if actual != testCase.expect {
-			t.Fatal("test case", i, "failed:", actual, "!=", testCase.expect)
-		}
+			actual := d.String()
+			if actual != testCase.expect {
+				t.Fatal(actual, "!=", testCase.expect)
+			}
+		})
 	}
 }
 
@@ -262,20 +275,22 @@ func TestPaceFlag(t *testing.T) {
 	}
 
 	for i, testCase := range testCases {
-		d := &PaceFlag{}
-		if err := d.Set(testCase.set); err != nil {
-			if expectErr, ok := testCase.expect.(error); !ok {
-				t.Fatal("test case", i, "error:", err)
-			} else if !strings.Contains(err.Error(), expectErr.Error()) {
-				t.Fatal("test case", i, "failed:", err, "!=", testCase.expect)
-			} else {
-				continue
+		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
+			d := &PaceFlag{}
+			if err := d.Set(testCase.set); err != nil {
+				if expectErr, ok := testCase.expect.(error); !ok {
+					t.Fatal(err)
+				} else if !strings.Contains(err.Error(), expectErr.Error()) {
+					t.Fatal(err, "!=", testCase.expect)
+				} else {
+					return
+				}
 			}
-		}
-		actual := d.String()
-		if actual != testCase.expect {
-			t.Fatal("test case", i, "failed:", actual, "!=", testCase.expect)
-		}
+			actual := d.String()
+			if actual != testCase.expect {
+				t.Fatal(actual, "!=", testCase.expect)
+			}
+		})
 	}
 }
 
@@ -304,24 +319,26 @@ func TestRegionSet(t *testing.T) {
 	}
 
 	for i, testCase := range testCases {
-		c := &CircleFlag{}
-		if err := c.Set(testCase.set); err != nil {
-			if expectErr, ok := testCase.expect.(error); !ok {
-				t.Fatal("test case", i, "error:", err)
-			} else if !strings.Contains(err.Error(), expectErr.Error()) {
-				t.Fatal("test case", i, "failed:", err, "!=", testCase.expect)
-			} else if !c.IsZero() {
-				t.Fatal("test case", i, "expected zero")
-			} else {
-				continue
+		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
+			c := &CircleFlag{}
+			if err := c.Set(testCase.set); err != nil {
+				if expectErr, ok := testCase.expect.(error); !ok {
+					t.Fatal(err)
+				} else if !strings.Contains(err.Error(), expectErr.Error()) {
+					t.Fatal(err, "!=", testCase.expect)
+				} else if !c.IsZero() {
+					t.Fatal("expected zero")
+				} else {
+					return
+				}
 			}
-		}
-		actual := c.String()
-		if actual != testCase.expect {
-			t.Fatal("test case", i, "failed:", actual, "!=", testCase.expect)
-		} else if c.IsZero() {
-			t.Fatal("test case", i, "expected not zero")
-		}
+			actual := c.String()
+			if actual != testCase.expect {
+				t.Fatal(actual, "!=", testCase.expect)
+			} else if c.IsZero() {
+				t.Fatal("expected not zero")
+			}
+		})
 	}
 }
 

@@ -19,9 +19,14 @@ func semicirclesToRadians(s int32) float64 {
 	return float64(s) * math.Pi / math.MaxInt32
 }
 
+const (
+	mercatorRadius  = 6_378_137
+	haversineRadius = 6_371_000
+)
+
 func mercatorMeters(pt Point) (float64, float64) {
-	x := 6_378_137 * pt.lon
-	y := 6_378_137 * math.Log(math.Tan((2*pt.lat+math.Pi)/4))
+	x := mercatorRadius * pt.lon
+	y := mercatorRadius * math.Log(math.Tan((2*pt.lat+math.Pi)/4))
 	return x, y
 }
 
@@ -29,7 +34,7 @@ func haversineDistance(pt1, pt2 Point) float64 {
 	sinLat := math.Sin((pt2.lat - pt1.lat) / 2)
 	sinLon := math.Sin((pt2.lon - pt1.lon) / 2)
 	a := sinLat*sinLat + math.Cos(pt1.lat)*math.Cos(pt2.lat)*sinLon*sinLon
-	return 12_742_000 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+	return 2 * haversineRadius * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
 }
 
 func newPointFromDegrees(lat, lon float64) Point {
@@ -53,12 +58,12 @@ func (p Point) IsZero() bool {
 }
 
 type Circle struct {
-	center Point
+	origin Point
 	radius float64
 }
 
 func (c Circle) String() string {
-	return fmt.Sprintf("%s,%s", c.center, formatFloat(c.radius))
+	return fmt.Sprintf("%s,%s", c.origin, formatFloat(c.radius))
 }
 
 func (c Circle) IsZero() bool {
@@ -66,11 +71,11 @@ func (c Circle) IsZero() bool {
 }
 
 func (c Circle) Contains(pt Point) bool {
-	return haversineDistance(pt, c.center) < c.radius
+	return haversineDistance(pt, c.origin) < c.radius
 }
 
 func (c Circle) Enclose(pt Point) Circle {
-	c.radius = math.Max(c.radius, haversineDistance(c.center, pt))
+	c.radius = math.Max(c.radius, haversineDistance(c.origin, pt))
 	return c
 }
 

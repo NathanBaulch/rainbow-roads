@@ -2,7 +2,6 @@ package main
 
 import (
 	"io"
-	"io/ioutil"
 	"strings"
 	"time"
 
@@ -46,7 +45,7 @@ var stravaTypeCodes = map[string]string{
 }
 
 func parseGPX(r io.Reader) ([]*activity, error) {
-	buf, err := ioutil.ReadAll(r)
+	buf, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}

@@ -65,7 +65,7 @@ type gifWriter struct {
 }
 
 func (w *gifWriter) Write(p []byte) (nn int, err error) {
-	var n = 0
+	n := 0
 	if !w.done {
 		// intercept application extension
 		if len(p) == 3 && p[0] == 0x21 && p[1] == 0xff && p[2] == 0x0b {
@@ -86,7 +86,7 @@ func (w *gifWriter) Write(p []byte) (nn int, err error) {
 }
 
 func (w *gifWriter) writeExtension(b []byte, e byte) (nn int, err error) {
-	var n = 0
+	n := 0
 	if n, err = w.Writer.Write([]byte{0x21, e, byte(len(b))}); err != nil {
 		return
 	} else {

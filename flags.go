@@ -55,13 +55,13 @@ type ColorsFlag []struct {
 	pos float64
 }
 
-func (g *ColorsFlag) Set(str string) error {
+func (c *ColorsFlag) Set(str string) error {
 	if str == "" {
 		return errors.New("unexpected empty value")
 	}
 
 	parts := strings.Split(str, ",")
-	*g = make(ColorsFlag, len(parts))
+	*c = make(ColorsFlag, len(parts))
 	var err error
 	missingAt := 0
 
@@ -70,21 +70,21 @@ func (g *ColorsFlag) Set(str string) error {
 			return errors.New("unexpected empty entry")
 		}
 
-		e := &(*g)[i]
+		e := &(*c)[i]
 		if pos := strings.Index(part, "@"); pos >= 0 {
 			if strings.HasSuffix(part, "%") {
 				if p, err := strconv.ParseFloat(part[pos+1:len(part)-1], 64); err != nil {
-					return errors.New(fmt.Sprintf("position %q not recognized", part[pos+1:]))
+					return fmt.Errorf("position %q not recognized", part[pos+1:])
 				} else {
 					e.pos = p / 100
 				}
 			} else {
 				if e.pos, err = strconv.ParseFloat(part[pos+1:], 64); err != nil {
-					return errors.New(fmt.Sprintf("position %q not recognized", part[pos+1:]))
+					return fmt.Errorf("position %q not recognized", part[pos+1:])
 				}
 			}
 			if e.pos < 0 || e.pos > 1 {
-				return errors.New(fmt.Sprintf("position %q not within range", part[pos+1:]))
+				return fmt.Errorf("position %q not within range", part[pos+1:])
 			}
 			part = part[:pos]
 		} else if i == 0 {
@@ -98,20 +98,20 @@ func (g *ColorsFlag) Set(str string) error {
 			}
 		}
 		if !math.IsNaN(e.pos) && missingAt > 0 {
-			p := (*g)[missingAt-1].pos
+			p := (*c)[missingAt-1].pos
 			step := (e.pos - p) / float64(i+1-missingAt)
 			for j := missingAt; j < i; j++ {
 				p += step
-				(*g)[j].pos = p
+				(*c)[j].pos = p
 			}
 			missingAt = 0
 		}
 
 		if e.Color, err = colorful.Hex(part); err != nil {
-			if c, ok := colornames.Map[strings.ToLower(part)]; !ok {
-				return errors.New(fmt.Sprintf("color %q not recognized", part))
+			if col, ok := colornames.Map[strings.ToLower(part)]; !ok {
+				return fmt.Errorf("color %q not recognized", part)
 			} else {
-				e.Color, _ = colorful.MakeColor(c)
+				e.Color, _ = colorful.MakeColor(col)
 			}
 		}
 		i++
@@ -120,16 +120,16 @@ func (g *ColorsFlag) Set(str string) error {
 	return nil
 }
 
-func (g *ColorsFlag) String() string {
-	parts := make([]string, len(*g))
-	for i, e := range *g {
+func (c *ColorsFlag) String() string {
+	parts := make([]string, len(*c))
+	for i, e := range *c {
 		var hex string
 		if r, g, b := e.Color.RGB255(); r>>4 == r&0xf && g>>4 == g&0xf && b>>4 == b&0xf {
 			hex = fmt.Sprintf("#%1x%1x%1x", r&0xf, g&0xf, b&0xf)
 		} else {
 			hex = fmt.Sprintf("#%02x%02x%02x", r, g, b)
 		}
-		if (i == 0 && e.pos == 0) || (i == len(*g)-1 && e.pos == 1) {
+		if (i == 0 && e.pos == 0) || (i == len(*c)-1 && e.pos == 1) {
 			parts[i] = hex
 		} else {
 			parts[i] = fmt.Sprintf("%s@%s", hex, formatFloat(e.pos))
@@ -138,14 +138,14 @@ func (g *ColorsFlag) String() string {
 	return strings.Join(parts, ",")
 }
 
-func (g *ColorsFlag) GetColorAt(p float64) color.Color {
-	last := len(*g) - 1
+func (c *ColorsFlag) GetColorAt(p float64) color.Color {
+	last := len(*c) - 1
 	for i := 0; i < last; i++ {
-		if e0, e1 := (*g)[i], (*g)[i+1]; e0.pos <= p && p <= e1.pos {
+		if e0, e1 := (*c)[i], (*c)[i+1]; e0.pos <= p && p <= e1.pos {
 			return e0.Color.BlendHcl(e1.Color, (p-e0.pos)/(e1.pos-e0.pos)).Clamped()
 		}
 	}
-	return (*g)[last].Color
+	return (*c)[last].Color
 }
 
 type SportsFlag []string
@@ -154,7 +154,7 @@ func (s *SportsFlag) Set(str string) error {
 	if str == "" {
 		return errors.New("unexpected empty value")
 	}
-	for _, str := range strings.Split(str, ",") {
+	for _, str = range strings.Split(str, ",") {
 		*s = append(*s, str)
 	}
 	return nil
@@ -231,15 +231,15 @@ func (p *PaceFlag) Set(str string) error {
 	if m := paceRE.FindStringSubmatch(str); len(m) != 4 {
 		return errors.New("format not recognized")
 	} else if d, err := time.ParseDuration(m[1]); err != nil {
-		return errors.New(fmt.Sprintf("duration %q not recognized", m[1]))
+		return fmt.Errorf("duration %q not recognized", m[1])
 	} else if d <= 0 {
 		return errors.New("must be positive")
 	} else if m[3] == "" || strings.EqualFold(m[3], units.Meter.Symbol) {
 		*p = PaceFlag{d}
 	} else if u, err := units.Find(m[3]); err != nil {
-		return errors.New(fmt.Sprintf("unit %q not recognized", m[3]))
+		return fmt.Errorf("unit %q not recognized", m[3])
 	} else if v, err := units.ConvertFloat(float64(d), units.Meter, u); err != nil {
-		return errors.New(fmt.Sprintf("unit %q not a distance", m[3]))
+		return fmt.Errorf("unit %q not a distance", m[3])
 	} else {
 		*p = PaceFlag{time.Duration(v.Float())}
 	}
@@ -255,15 +255,15 @@ func (c *CircleFlag) Set(str string) error {
 	if parts := strings.Split(str, ","); len(parts) < 2 || len(parts) > 3 {
 		return errors.New("invalid number of parts")
 	} else if lat, err := strconv.ParseFloat(parts[0], 64); err != nil {
-		return errors.New(fmt.Sprintf("latitude %q not recognized", parts[0]))
+		return fmt.Errorf("latitude %q not recognized", parts[0])
 	} else if lon, err := strconv.ParseFloat(parts[1], 64); err != nil {
-		return errors.New(fmt.Sprintf("longitude %q not recognized", parts[1]))
+		return fmt.Errorf("longitude %q not recognized", parts[1])
 	} else if lat < -85 || lat > 85 {
-		return errors.New(fmt.Sprintf("latitude %q not within range", formatFloat(lat)))
+		return fmt.Errorf("latitude %q not within range", formatFloat(lat))
 	} else if lon < -180 || lon > 180 {
-		return errors.New(fmt.Sprintf("longitude %q not within range", formatFloat(lon)))
+		return fmt.Errorf("longitude %q not within range", formatFloat(lon))
 	} else {
-		c.center = newPointFromDegrees(lat, lon)
+		c.origin = newPointFromDegrees(lat, lon)
 		radius := 100.0
 		if len(parts) == 3 {
 			if radius, err = parseDistance(parts[2]); err != nil {
@@ -281,15 +281,15 @@ func parseDistance(str string) (float64, error) {
 	if m := distanceRE.FindStringSubmatch(str); len(m) != 3 {
 		return 0, errors.New("format not recognized")
 	} else if f, err := strconv.ParseFloat(m[1], 64); err != nil {
-		return 0, errors.New(fmt.Sprintf("number %q not recognized", m[1]))
+		return 0, fmt.Errorf("number %q not recognized", m[1])
 	} else if f < 0 {
 		return 0, errors.New("must be positive")
 	} else if m[2] == "" || strings.EqualFold(m[2], units.Meter.Symbol) {
 		return f, nil
 	} else if u, err := units.Find(m[2]); err != nil {
-		return 0, errors.New(fmt.Sprintf("unit %q not recognized", m[2]))
+		return 0, fmt.Errorf("unit %q not recognized", m[2])
 	} else if v, err := units.ConvertFloat(f, u, units.Meter); err != nil {
-		return 0, errors.New(fmt.Sprintf("unit %q not a distance", m[2]))
+		return 0, fmt.Errorf("unit %q not a distance", m[2])
 	} else {
 		return v.Float(), nil
 	}
