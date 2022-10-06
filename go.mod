@@ -10,6 +10,7 @@ require (
 	github.com/llehouerou/go-tcx v0.0.0-20161119054955-2b6af946ac47
 	github.com/lucasb-eyer/go-colorful v1.2.0
 	github.com/schollz/progressbar v1.0.0
+	github.com/spf13/pflag v1.0.5
 	github.com/tkrajina/gpxgo v1.2.1
 	github.com/tormoder/fit v0.14.0
 	golang.org/x/image v0.0.0-20220902085622-e7cb96979f69

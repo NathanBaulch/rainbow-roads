@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"errors"
-	"flag"
 	"fmt"
 	"image"
 	"image/color"
@@ -25,6 +24,7 @@ import (
 	"github.com/StephaneBunel/bresenham"
 	"github.com/kettek/apng"
 	"github.com/schollz/progressbar"
+	"github.com/spf13/pflag"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
@@ -79,51 +79,58 @@ func init() {
 }
 
 func main() {
-	general := &flag.FlagSet{}
+	general := &pflag.FlagSet{}
 	general.StringVar(&output, "output", "out", "optional path of the generated file")
-	general.Var(&format, "format", "output file format `string`, supports gif, png, zip")
-	general.VisitAll(func(f *flag.Flag) { flag.Var(f.Value, f.Name, f.Usage) })
+	general.Var(&format, "format", "output file format string, supports gif, png, zip")
+	general.VisitAll(func(f *pflag.Flag) { pflag.Var(f.Value, f.Name, f.Usage) })
 
-	rendering := &flag.FlagSet{}
+	rendering := &pflag.FlagSet{}
 	rendering.UintVar(&frames, "frames", 200, "number of animation frames")
 	rendering.UintVar(&fps, "fps", 20, "animation frame rate")
 	rendering.UintVar(&width, "width", 500, "width of the generated image in pixels")
-	rendering.Var(&colors, "colors", "CSS linear-colors inspired color scheme `string`, eg red,yellow,green,blue,black")
+	rendering.Var(&colors, "colors", "CSS linear-colors inspired color scheme string, eg red,yellow,green,blue,black")
 	rendering.UintVar(&colorDepth, "color_depth", 5, "number of bits per color in the image palette")
 	rendering.Float64Var(&speed, "speed", 1.25, "how quickly activities should progress")
 	rendering.BoolVar(&loop, "loop", false, "start each activity sequentially and animate continuously")
 	rendering.BoolVar(&noWatermark, "no_watermark", false, "suppress the embedded project name and version string")
-	rendering.VisitAll(func(f *flag.Flag) { flag.Var(f.Value, f.Name, f.Usage) })
+	rendering.VisitAll(func(f *pflag.Flag) { pflag.Var(f.Value, f.Name, f.Usage) })
 
-	filters := &flag.FlagSet{}
+	filters := &pflag.FlagSet{}
 	filters.Var(&sports, "sport", "sports to include, can be specified multiple times, eg running, cycling")
-	filters.Var(&after, "after", "`date` from which activities should be included")
-	filters.Var(&before, "before", "`date` prior to which activities should be included")
-	filters.Var(&minDuration, "min_duration", "shortest `duration` of included activities, eg 15m")
-	filters.Var(&maxDuration, "max_duration", "longest `duration` of included activities, eg 1h")
-	filters.Var(&minDistance, "min_distance", "shortest `distance` of included activities, eg 2km")
-	filters.Var(&maxDistance, "max_distance", "greatest `distance` of included activities, eg 10mi")
-	filters.Var(&minPace, "min_pace", "slowest `pace` of included activities, eg 8km/h")
-	filters.Var(&maxPace, "max_pace", "fastest `pace` of included activities, eg 10min/mi")
-	filters.Var(&boundedBy, "bounded_by", "`region` that activities must be fully contained within, eg -37.8,144.9,10km")
-	filters.Var(&startsNear, "starts_near", "`region` that activities must start from, eg 51.53,-0.21,1km")
-	filters.Var(&endsNear, "ends_near", "`region` that activities must end in, eg 30.06,31.22,1km")
-	filters.Var(&passesThrough, "passes_through", "`region` that activities must pass through, eg 40.69,-74.12,10mi")
-	filters.VisitAll(func(f *flag.Flag) { flag.Var(f.Value, f.Name, f.Usage) })
+	filters.Var(&after, "after", "date from which activities should be included")
+	filters.Var(&before, "before", "date prior to which activities should be included")
+	filters.Var(&minDuration, "min_duration", "shortest duration of included activities, eg 15m")
+	filters.Var(&maxDuration, "max_duration", "longest duration of included activities, eg 1h")
+	filters.Var(&minDistance, "min_distance", "shortest distance of included activities, eg 2km")
+	filters.Var(&maxDistance, "max_distance", "greatest distance of included activities, eg 10mi")
+	filters.Var(&minPace, "min_pace", "slowest pace of included activities, eg 8km/h")
+	filters.Var(&maxPace, "max_pace", "fastest pace of included activities, eg 10min/mi")
+	filters.Var(&boundedBy, "bounded_by", "region that activities must be fully contained within, eg -37.8,144.9,10km")
+	filters.Var(&startsNear, "starts_near", "region that activities must start from, eg 51.53,-0.21,1km")
+	filters.Var(&endsNear, "ends_near", "region that activities must end in, eg 30.06,31.22,1km")
+	filters.Var(&passesThrough, "passes_through", "region that activities must pass through, eg 40.69,-74.12,10mi")
+	filters.VisitAll(func(f *pflag.Flag) { pflag.Var(f.Value, f.Name, f.Usage) })
 
-	flag.Usage = func() {
-		fmt.Fprintln(flag.CommandLine.Output(), "Usage of", shortTitle+":")
+	pflag.CommandLine.Init("", pflag.ContinueOnError)
+	pflag.Usage = func() {
+		fmt.Fprintln(os.Stderr, "Usage of", shortTitle+":")
 		general.PrintDefaults()
-		fmt.Fprintln(flag.CommandLine.Output(), "Filtering:")
+		fmt.Fprintln(os.Stderr, "Filtering:")
 		filters.PrintDefaults()
-		fmt.Fprintln(flag.CommandLine.Output(), "Rendering:")
+		fmt.Fprintln(os.Stderr, "Rendering:")
 		rendering.PrintDefaults()
 	}
-	flag.Parse()
+	if err := pflag.CommandLine.Parse(os.Args[1:]); err != nil {
+		if err == pflag.ErrHelp {
+			return
+		}
+		fmt.Println(err)
+		os.Exit(2)
+	}
 
 	invalidFlag := func(name string, reason string) {
-		fmt.Fprintf(flag.CommandLine.Output(), "invalid value %q for flag -%s: %s\n", flag.Lookup(name).Value, name, reason)
-		flag.Usage()
+		fmt.Fprintf(os.Stderr, "invalid value %q for flag --%s: %s\n", pflag.Lookup(name).Value, name, reason)
+		pflag.Usage()
 		os.Exit(2)
 	}
 	if frames == 0 {
@@ -144,7 +151,7 @@ func main() {
 
 	en.Println(shortTitle)
 
-	input = flag.Args()
+	input = pflag.Args()
 	if len(input) == 0 {
 		input = []string{"."}
 	}

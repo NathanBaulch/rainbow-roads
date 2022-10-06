@@ -11,13 +11,13 @@ A command line tool that animates your exercise maps, inspired by an [article by
 ## Example usage
 ```text
 > rainbow-roads \
-    -sport running \
-    -after 2020-08-01 \
-    -min_duration 15m \
-    -min_distance 3km \
-    -max_pace 10m/km \
-    -bounded_by -37.8,144.9,5km \
-    -output lockdown_project \
+    --sport running \
+    --after 2020-08-01 \
+    --min_duration 15m \
+    --min_distance 3km \
+    --max_pace 10m/km \
+    --bounded_by -37.8,144.9,5km \
+    --output lockdown_project \
     path/to/my/activity/data
 ```
 Some basic statistics are output to help validate the activities that were included and to aid in further refining filters.
@@ -40,54 +40,31 @@ The easiest way to find the coordinates of a known location is to right-click on
 ## Options
 ```text
 Usage of rainbow-roads:
-  -format string
-        output file format string, supports gif, png, zip
-  -output string
-        optional path of the generated file (default "out")
+      --output string   optional path of the generated file (default "out")
+      --format format   output file format string, supports gif, png, zip
 Filtering:
-  -after date
-        date from which activities should be included
-  -before date
-        date prior to which activities should be included
-  -bounded_by region
-        region that activities must be fully contained within, eg -37.8,144.9,10km
-  -ends_near region
-        region that activities must end in, eg 30.06,31.22,1km
-  -max_distance distance
-        greatest distance of included activities, eg 10mi
-  -max_duration duration
-        longest duration of included activities, eg 1h
-  -max_pace pace
-        fastest pace of included activities, eg 10min/mi
-  -min_distance distance
-        shortest distance of included activities, eg 2km
-  -min_duration duration
-        shortest duration of included activities, eg 15m
-  -min_pace pace
-        slowest pace of included activities, eg 8km/h
-  -passes_through region
-        region that activities must pass through, eg 40.69,-74.12,10mi
-  -sport value
-        sports to include, can be specified multiple times, eg running, cycling
-  -starts_near region
-        region that activities must start from, eg 51.53,-0.21,1km
+      --sport sports            sports to include, can be specified multiple times, eg running, cycling
+      --after date              date from which activities should be included
+      --before date             date prior to which activities should be included
+      --min_duration duration   shortest duration of included activities, eg 15m
+      --max_duration duration   longest duration of included activities, eg 1h
+      --min_distance distance   shortest distance of included activities, eg 2km
+      --max_distance distance   greatest distance of included activities, eg 10mi
+      --min_pace pace           slowest pace of included activities, eg 8km/h
+      --max_pace pace           fastest pace of included activities, eg 10min/mi
+      --bounded_by circle       region that activities must be fully contained within, eg -37.8,144.9,10km
+      --starts_near circle      region that activities must start from, eg 51.53,-0.21,1km
+      --ends_near circle        region that activities must end in, eg 30.06,31.22,1km
+      --passes_through circle   region that activities must pass through, eg 40.69,-74.12,10mi
 Rendering:
-  -color_depth uint
-        number of bits per color in the image palette (default 5)
-  -colors string
-        CSS linear-colors inspired color scheme string, eg red,yellow,green,blue,black (default #fff,#ff8,#911,#414,#007@.5,#003)
-  -fps uint
-        animation frame rate (default 20)
-  -frames uint
-        number of animation frames (default 200)
-  -loop
-        start each activity sequentially and animate continuously
-  -no_watermark
-        suppress the embedded project name and version string
-  -speed float
-        how quickly activities should progress (default 1.25)
-  -width uint
-        width of the generated image in pixels (default 500)
+      --frames uint        number of animation frames (default 200)
+      --fps uint           animation frame rate (default 20)
+      --width uint         width of the generated image in pixels (default 500)
+      --colors colors      CSS linear-colors inspired color scheme string, eg red,yellow,green,blue,black (default #fff,#ff8,#911,#414,#007@.5,#003)
+      --color_depth uint   number of bits per color in the image palette (default 5)
+      --speed float        how quickly activities should progress (default 1.25)
+      --loop               start each activity sequentially and animate continuously
+      --no_watermark       suppress the embedded project name and version string
 ```
 
 ## Beginners guide (Windows)

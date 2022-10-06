@@ -26,6 +26,10 @@ type FormatFlag struct {
 	index int
 }
 
+func (f *FormatFlag) Type() string {
+	return "format"
+}
+
 func (f *FormatFlag) Set(str string) error {
 	if str == "" {
 		return errors.New("unexpected empty value")
@@ -53,6 +57,10 @@ func (f *FormatFlag) IsZero() bool {
 type ColorsFlag []struct {
 	colorful.Color
 	pos float64
+}
+
+func (c *ColorsFlag) Type() string {
+	return "colors"
 }
 
 func (c *ColorsFlag) Set(str string) error {
@@ -150,6 +158,10 @@ func (c *ColorsFlag) GetColorAt(p float64) color.Color {
 
 type SportsFlag []string
 
+func (s *SportsFlag) Type() string {
+	return "sports"
+}
+
 func (s *SportsFlag) Set(str string) error {
 	if str == "" {
 		return errors.New("unexpected empty value")
@@ -167,6 +179,10 @@ func (s *SportsFlag) String() string {
 
 type DateFlag struct{ time.Time }
 
+func (d *DateFlag) Type() string {
+	return "date"
+}
+
 func (d *DateFlag) Set(str string) error {
 	if str == "" {
 		return errors.New("unexpected empty value")
@@ -179,7 +195,18 @@ func (d *DateFlag) Set(str string) error {
 	}
 }
 
+func (d *DateFlag) String() string {
+	if d.IsZero() {
+		return ""
+	}
+	return d.Time.String()
+}
+
 type DurationFlag struct{ time.Duration }
+
+func (d *DurationFlag) Type() string {
+	return "duration"
+}
 
 func (d *DurationFlag) Set(str string) error {
 	if str == "" {
@@ -202,7 +229,18 @@ func (d *DurationFlag) Set(str string) error {
 	return nil
 }
 
+func (d *DurationFlag) String() string {
+	if d.Duration == 0 {
+		return ""
+	}
+	return d.Duration.String()
+}
+
 type DistanceFlag float64
+
+func (d *DistanceFlag) Type() string {
+	return "distance"
+}
 
 func (d *DistanceFlag) Set(str string) error {
 	if str == "" {
@@ -221,6 +259,10 @@ func (d *DistanceFlag) String() string {
 }
 
 type PaceFlag struct{ time.Duration }
+
+func (p *PaceFlag) Type() string {
+	return "pace"
+}
 
 var paceRE = regexp.MustCompile(`^([^/]+)(/([^/]+))?$`)
 
@@ -246,7 +288,18 @@ func (p *PaceFlag) Set(str string) error {
 	return nil
 }
 
+func (p *PaceFlag) String() string {
+	if p.Duration == 0 {
+		return ""
+	}
+	return p.Duration.String()
+}
+
 type CircleFlag struct{ Circle }
+
+func (c *CircleFlag) Type() string {
+	return "circle"
+}
 
 func (c *CircleFlag) Set(str string) error {
 	if str == "" {
@@ -273,6 +326,13 @@ func (c *CircleFlag) Set(str string) error {
 		c.radius = radius
 		return nil
 	}
+}
+
+func (c *CircleFlag) String() string {
+	if c.IsZero() {
+		return ""
+	}
+	return c.Circle.String()
 }
 
 var distanceRE = regexp.MustCompile(`^(.*\d)\s?(\w+)?$`)
