@@ -177,7 +177,7 @@ func (s *SportsFlag) String() string {
 	return strings.Join(*s, ",")
 }
 
-type DateFlag struct{ time.Time }
+type DateFlag time.Time
 
 func (d *DateFlag) Type() string {
 	return "date"
@@ -190,19 +190,19 @@ func (d *DateFlag) Set(str string) error {
 	if val, err := dateparse.ParseIn(str, time.UTC); err != nil {
 		return errors.New("date not recognized")
 	} else {
-		*d = DateFlag{val}
+		*d = DateFlag(val)
 		return nil
 	}
 }
 
 func (d *DateFlag) String() string {
-	if d.IsZero() {
+	if d == nil || time.Time(*d).IsZero() {
 		return ""
 	}
-	return d.Time.String()
+	return time.Time(*d).String()
 }
 
-type DurationFlag struct{ time.Duration }
+type DurationFlag time.Duration
 
 func (d *DurationFlag) Type() string {
 	return "duration"
@@ -225,15 +225,15 @@ func (d *DurationFlag) Set(str string) error {
 	if val <= 0 {
 		return errors.New("must be positive")
 	}
-	*d = DurationFlag{val}
+	*d = DurationFlag(val)
 	return nil
 }
 
 func (d *DurationFlag) String() string {
-	if d.Duration == 0 {
+	if d == nil || *d == 0 {
 		return ""
 	}
-	return d.Duration.String()
+	return time.Duration(*d).String()
 }
 
 type DistanceFlag float64
@@ -258,7 +258,7 @@ func (d *DistanceFlag) String() string {
 	return formatFloat(float64(*d))
 }
 
-type PaceFlag struct{ time.Duration }
+type PaceFlag time.Duration
 
 func (p *PaceFlag) Type() string {
 	return "pace"
@@ -277,25 +277,25 @@ func (p *PaceFlag) Set(str string) error {
 	} else if d <= 0 {
 		return errors.New("must be positive")
 	} else if m[3] == "" || strings.EqualFold(m[3], units.Meter.Symbol) {
-		*p = PaceFlag{d}
+		*p = PaceFlag(d)
 	} else if u, err := units.Find(m[3]); err != nil {
 		return fmt.Errorf("unit %q not recognized", m[3])
 	} else if v, err := units.ConvertFloat(float64(d), units.Meter, u); err != nil {
 		return fmt.Errorf("unit %q not a distance", m[3])
 	} else {
-		*p = PaceFlag{time.Duration(v.Float())}
+		*p = PaceFlag(v.Float())
 	}
 	return nil
 }
 
 func (p *PaceFlag) String() string {
-	if p.Duration == 0 {
+	if p == nil || *p == 0 {
 		return ""
 	}
-	return p.Duration.String()
+	return time.Duration(*p).String()
 }
 
-type CircleFlag struct{ Circle }
+type CircleFlag Circle
 
 func (c *CircleFlag) Type() string {
 	return "circle"
@@ -316,23 +316,24 @@ func (c *CircleFlag) Set(str string) error {
 	} else if lon < -180 || lon > 180 {
 		return fmt.Errorf("longitude %q not within range", formatFloat(lon))
 	} else {
-		c.origin = newPointFromDegrees(lat, lon)
-		radius := 100.0
+		*c = CircleFlag{
+			origin: newPointFromDegrees(lat, lon),
+			radius: 100,
+		}
 		if len(parts) == 3 {
-			if radius, err = parseDistance(parts[2]); err != nil {
+			if c.radius, err = parseDistance(parts[2]); err != nil {
 				return errors.New("radius " + err.Error())
 			}
 		}
-		c.radius = radius
 		return nil
 	}
 }
 
 func (c *CircleFlag) String() string {
-	if c.IsZero() {
+	if c == nil || Circle(*c).IsZero() {
 		return ""
 	}
-	return c.Circle.String()
+	return Circle(*c).String()
 }
 
 var distanceRE = regexp.MustCompile(`^(.*\d)\s?(\w+)?$`)

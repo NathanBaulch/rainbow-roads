@@ -47,18 +47,18 @@ var (
 	noWatermark bool
 
 	sports        SportsFlag
-	after         DateFlag
-	before        DateFlag
-	minDuration   DurationFlag
-	maxDuration   DurationFlag
-	minDistance   DistanceFlag
-	maxDistance   DistanceFlag
-	minPace       PaceFlag
-	maxPace       PaceFlag
-	boundedBy     CircleFlag
-	startsNear    CircleFlag
-	endsNear      CircleFlag
-	passesThrough CircleFlag
+	after         time.Time
+	before        time.Time
+	minDuration   time.Duration
+	maxDuration   time.Duration
+	minDistance   float64
+	maxDistance   float64
+	minPace       time.Duration
+	maxPace       time.Duration
+	boundedBy     Circle
+	startsNear    Circle
+	endsNear      Circle
+	passesThrough Circle
 
 	en         = message.NewPrinter(language.English)
 	files      []*file
@@ -97,18 +97,18 @@ func main() {
 
 	filters := &pflag.FlagSet{}
 	filters.Var(&sports, "sport", "sports to include, can be specified multiple times, eg running, cycling")
-	filters.Var(&after, "after", "date from which activities should be included")
-	filters.Var(&before, "before", "date prior to which activities should be included")
-	filters.Var(&minDuration, "min_duration", "shortest duration of included activities, eg 15m")
-	filters.Var(&maxDuration, "max_duration", "longest duration of included activities, eg 1h")
-	filters.Var(&minDistance, "min_distance", "shortest distance of included activities, eg 2km")
-	filters.Var(&maxDistance, "max_distance", "greatest distance of included activities, eg 10mi")
-	filters.Var(&minPace, "min_pace", "slowest pace of included activities, eg 8km/h")
-	filters.Var(&maxPace, "max_pace", "fastest pace of included activities, eg 10min/mi")
-	filters.Var(&boundedBy, "bounded_by", "region that activities must be fully contained within, eg -37.8,144.9,10km")
-	filters.Var(&startsNear, "starts_near", "region that activities must start from, eg 51.53,-0.21,1km")
-	filters.Var(&endsNear, "ends_near", "region that activities must end in, eg 30.06,31.22,1km")
-	filters.Var(&passesThrough, "passes_through", "region that activities must pass through, eg 40.69,-74.12,10mi")
+	filters.Var((*DateFlag)(&after), "after", "date from which activities should be included")
+	filters.Var((*DateFlag)(&before), "before", "date prior to which activities should be included")
+	filters.Var((*DurationFlag)(&minDuration), "min_duration", "shortest duration of included activities, eg 15m")
+	filters.Var((*DurationFlag)(&maxDuration), "max_duration", "longest duration of included activities, eg 1h")
+	filters.Var((*DistanceFlag)(&minDistance), "min_distance", "shortest distance of included activities, eg 2km")
+	filters.Var((*DistanceFlag)(&maxDistance), "max_distance", "greatest distance of included activities, eg 10mi")
+	filters.Var((*PaceFlag)(&minPace), "min_pace", "slowest pace of included activities, eg 8km/h")
+	filters.Var((*PaceFlag)(&maxPace), "max_pace", "fastest pace of included activities, eg 10min/mi")
+	filters.Var((*CircleFlag)(&boundedBy), "bounded_by", "region that activities must be fully contained within, eg -37.8,144.9,10km")
+	filters.Var((*CircleFlag)(&startsNear), "starts_near", "region that activities must start from, eg 51.53,-0.21,1km")
+	filters.Var((*CircleFlag)(&endsNear), "ends_near", "region that activities must end in, eg 30.06,31.22,1km")
+	filters.Var((*CircleFlag)(&passesThrough), "passes_through", "region that activities must pass through, eg 40.69,-74.12,10mi")
 	filters.VisitAll(func(f *pflag.Flag) { pflag.Var(f.Value, f.Name, f.Usage) })
 
 	pflag.CommandLine.Init("", pflag.ContinueOnError)
@@ -498,10 +498,10 @@ func includeSport(sport string) bool {
 }
 
 func includeTimestamp(from, to time.Time) bool {
-	if !after.Time.IsZero() && after.Time.After(from) {
+	if !after.IsZero() && after.After(from) {
 		return false
 	}
-	if !before.Time.IsZero() && before.Time.Before(to) {
+	if !before.IsZero() && before.Before(to) {
 		return false
 	}
 	return true
@@ -511,10 +511,10 @@ func includeDuration(duration time.Duration) bool {
 	if duration == 0 {
 		return false
 	}
-	if min := minDuration.Duration; min != 0 && duration < min {
+	if minDuration != 0 && duration < minDuration {
 		return false
 	}
-	if max := maxDuration.Duration; max != 0 && duration > max {
+	if maxDuration != 0 && duration > maxDuration {
 		return false
 	}
 	return true
@@ -537,10 +537,10 @@ func includePace(pace time.Duration) bool {
 	if pace == 0 {
 		return false
 	}
-	if min := minPace.Duration; min != 0 && pace < min {
+	if minPace != 0 && pace < minPace {
 		return false
 	}
-	if max := maxPace.Duration; max != 0 && pace > max {
+	if maxPace != 0 && pace > maxPace {
 		return false
 	}
 	return true

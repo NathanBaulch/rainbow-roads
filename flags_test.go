@@ -197,7 +197,7 @@ func TestDurationSet(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
-			d := &DurationFlag{}
+			var d DurationFlag
 			if err := d.Set(testCase.set); err != nil {
 				if expectErr, ok := testCase.expect.(error); !ok {
 					t.Fatal(err)
@@ -276,8 +276,8 @@ func TestPaceFlag(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
-			d := &PaceFlag{}
-			if err := d.Set(testCase.set); err != nil {
+			var p PaceFlag
+			if err := p.Set(testCase.set); err != nil {
 				if expectErr, ok := testCase.expect.(error); !ok {
 					t.Fatal(err)
 				} else if !strings.Contains(err.Error(), expectErr.Error()) {
@@ -286,7 +286,7 @@ func TestPaceFlag(t *testing.T) {
 					return
 				}
 			}
-			actual := d.String()
+			actual := p.String()
 			if actual != testCase.expect {
 				t.Fatal(actual, "!=", testCase.expect)
 			}
@@ -320,8 +320,8 @@ func TestRegionSet(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
-			c := &CircleFlag{}
-			if err := c.Set(testCase.set); err != nil {
+			c := &Circle{}
+			if err := (*CircleFlag)(c).Set(testCase.set); err != nil {
 				if expectErr, ok := testCase.expect.(error); !ok {
 					t.Fatal(err)
 				} else if !strings.Contains(err.Error(), expectErr.Error()) {
@@ -343,8 +343,8 @@ func TestRegionSet(t *testing.T) {
 }
 
 func TestRegionContains(t *testing.T) {
-	c := &CircleFlag{}
-	if err := c.Set("1,2,3"); err != nil {
+	c := &Circle{}
+	if err := (*CircleFlag)(c).Set("1,2,3"); err != nil {
 		t.Fatal(err)
 	}
 	if !c.Contains(Point{lat: 0.0174536, lon: 0.0349068}) {
