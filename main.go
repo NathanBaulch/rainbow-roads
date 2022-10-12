@@ -389,7 +389,7 @@ func parse() error {
 		if act.distance > maxDist {
 			maxDist = act.distance
 		}
-		pace := dur / time.Duration(act.distance)
+		pace := time.Duration(float64(dur) / act.distance)
 		if pace < minP {
 			minP = pace
 		}
@@ -533,7 +533,8 @@ func includeDistance(distance float64) bool {
 	return true
 }
 
-func includePace(pace time.Duration) bool {
+func includePace(duration time.Duration, distance float64) bool {
+	pace := time.Duration(float64(duration) / distance)
 	if pace == 0 {
 		return false
 	}

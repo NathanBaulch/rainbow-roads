@@ -2,7 +2,6 @@ package main
 
 import (
 	"io"
-	"time"
 
 	"github.com/tormoder/fit"
 )
@@ -29,7 +28,7 @@ func parseFIT(r io.Reader) ([]*activity, error) {
 			!includeTimestamp(r0.Timestamp, r1.Timestamp) ||
 			!includeDuration(dur) ||
 			!includeDistance(act.distance) ||
-			!includePace(dur/time.Duration(act.distance)) {
+			!includePace(dur, act.distance) {
 			return nil, nil
 		}
 		act.records = make([]*record, 0, len(a.Records))

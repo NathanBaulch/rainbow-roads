@@ -3,7 +3,6 @@ package main
 import (
 	"io"
 	"strings"
-	"time"
 
 	"github.com/tkrajina/gpxgo/gpx"
 )
@@ -99,7 +98,7 @@ func parseGPX(r io.Reader) ([]*activity, error) {
 			!includeTimestamp(p0.Timestamp, p1.Timestamp) ||
 			!includeDuration(dur) ||
 			!includeDistance(act.distance) ||
-			!includePace(dur/time.Duration(act.distance)) {
+			!includePace(dur, act.distance) {
 			continue
 		}
 
