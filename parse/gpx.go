@@ -1,9 +1,10 @@
-package main
+package parse
 
 import (
 	"io"
 	"strings"
 
+	"github.com/NathanBaulch/rainbow-roads/geo"
 	"github.com/tkrajina/gpxgo/gpx"
 )
 
@@ -43,7 +44,7 @@ var stravaTypeCodes = map[string]string{
 	"53": "VirtualRunning",
 }
 
-func parseGPX(r io.Reader) ([]*activity, error) {
+func parseGPX(r io.Reader, selector *Selector) ([]*Activity, error) {
 	buf, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
@@ -54,7 +55,7 @@ func parseGPX(r io.Reader) ([]*activity, error) {
 		return nil, err
 	}
 
-	acts := make([]*activity, 0, len(g.Tracks))
+	acts := make([]*Activity, 0, len(g.Tracks))
 
 	for _, t := range g.Tracks {
 		sport := t.Type
@@ -63,13 +64,13 @@ func parseGPX(r io.Reader) ([]*activity, error) {
 				sport = s
 			}
 		}
-		if len(t.Segments) == 0 || !includeSport(sport) {
+		if len(t.Segments) == 0 || !selector.Sport(sport) {
 			continue
 		}
 
-		act := &activity{
-			sport:   sport,
-			records: make([]*record, 0, len(t.Segments[0].Points)),
+		act := &Activity{
+			Sport:   sport,
+			Records: make([]*Record, 0, len(t.Segments[0].Points)),
 		}
 
 		var p0, p1 gpx.GPXPoint
@@ -79,26 +80,26 @@ func parseGPX(r io.Reader) ([]*activity, error) {
 			}
 
 			for i, p := range s.Points {
-				if len(act.records) == 0 {
+				if len(act.Records) == 0 {
 					p0 = p
 				}
 				p1 = p
-				act.records = append(act.records, &record{
-					ts: p.Timestamp,
-					pt: newPointFromDegrees(p.Latitude, p.Longitude),
+				act.Records = append(act.Records, &Record{
+					Timestamp: p.Timestamp,
+					Position:  geo.NewPointFromDegrees(p.Latitude, p.Longitude),
 				})
 				if i > 0 {
-					act.distance += haversineDistance(act.records[i-1].pt, act.records[i].pt)
+					act.Distance += act.Records[i-1].Position.DistanceTo(act.Records[i].Position)
 				}
 			}
 		}
 
 		dur := p1.Timestamp.Sub(p0.Timestamp)
-		if len(act.records) == 0 ||
-			!includeTimestamp(p0.Timestamp, p1.Timestamp) ||
-			!includeDuration(dur) ||
-			!includeDistance(act.distance) ||
-			!includePace(dur, act.distance) {
+		if len(act.Records) == 0 ||
+			!selector.Timestamp(p0.Timestamp, p1.Timestamp) ||
+			!selector.Duration(dur) ||
+			!selector.Distance(act.Distance) ||
+			!selector.Pace(dur, act.Distance) {
 			continue
 		}
 

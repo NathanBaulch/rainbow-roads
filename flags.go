@@ -3,157 +3,58 @@ package main
 import (
 	"errors"
 	"fmt"
-	"image/color"
-	"math"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/NathanBaulch/rainbow-roads/conv"
+	"github.com/NathanBaulch/rainbow-roads/geo"
+	"github.com/NathanBaulch/rainbow-roads/img"
+	"github.com/NathanBaulch/rainbow-roads/parse"
 	"github.com/araddon/dateparse"
 	"github.com/bcicen/go-units"
-	"github.com/lucasb-eyer/go-colorful"
-	"golang.org/x/image/colornames"
+	"github.com/spf13/pflag"
 )
 
-func NewFormatFlag(opts ...string) FormatFlag {
-	return FormatFlag{opts: opts}
+func filterFlagSet(selector *parse.Selector) *pflag.FlagSet {
+	fs := &pflag.FlagSet{}
+	fs.Var((*SportsFlag)(&selector.Sports), "sport", "sports to include, can be specified multiple times, eg running, cycling")
+	fs.Var((*DateFlag)(&selector.After), "after", "date from which activities should be included")
+	fs.Var((*DateFlag)(&selector.Before), "before", "date prior to which activities should be included")
+	fs.Var((*DurationFlag)(&selector.MinDuration), "min_duration", "shortest duration of included activities, eg 15m")
+	fs.Var((*DurationFlag)(&selector.MaxDuration), "max_duration", "longest duration of included activities, eg 1h")
+	fs.Var((*DistanceFlag)(&selector.MinDistance), "min_distance", "shortest distance of included activities, eg 2km")
+	fs.Var((*DistanceFlag)(&selector.MaxDistance), "max_distance", "greatest distance of included activities, eg 10mi")
+	fs.Var((*PaceFlag)(&selector.MinPace), "min_pace", "slowest pace of included activities, eg 8km/h")
+	fs.Var((*PaceFlag)(&selector.MaxPace), "max_pace", "fastest pace of included activities, eg 10min/mi")
+	fs.Var((*CircleFlag)(&selector.BoundedBy), "bounded_by", "region that activities must be fully contained within, eg -37.8,144.9,10km")
+	fs.Var((*CircleFlag)(&selector.StartsNear), "starts_near", "region that activities must start from, eg 51.53,-0.21,1km")
+	fs.Var((*CircleFlag)(&selector.EndsNear), "ends_near", "region that activities must end in, eg 30.06,31.22,1km")
+	fs.Var((*CircleFlag)(&selector.PassesThrough), "passes_through", "region that activities must pass through, eg 40.69,-74.12,10mi")
+	return fs
 }
 
-type FormatFlag struct {
-	opts  []string
-	index int
+func flagError(name string, value any, reason string) error {
+	return fmt.Errorf("invalid value %q for flag --%s: %s\n", value, name, reason)
 }
 
-func (f *FormatFlag) Type() string {
-	return "format"
-}
-
-func (f *FormatFlag) Set(str string) error {
-	if str == "" {
-		return errors.New("unexpected empty value")
-	}
-	for i, opt := range f.opts {
-		if strings.EqualFold(str, opt) {
-			f.index = i + 1
-			return nil
-		}
-	}
-	return errors.New("invalid value")
-}
-
-func (f *FormatFlag) String() string {
-	if f.index > 0 {
-		return f.opts[f.index-1]
-	}
-	return ""
-}
-
-func (f *FormatFlag) IsZero() bool {
-	return f.index == 0
-}
-
-type ColorsFlag []struct {
-	colorful.Color
-	pos float64
-}
+type ColorsFlag img.ColorGradient
 
 func (c *ColorsFlag) Type() string {
 	return "colors"
 }
 
 func (c *ColorsFlag) Set(str string) error {
-	if str == "" {
-		return errors.New("unexpected empty value")
-	}
-
-	parts := strings.Split(str, ",")
-	*c = make(ColorsFlag, len(parts))
-	var err error
-	missingAt := 0
-
-	for i, part := range parts {
-		if part == "" {
-			return errors.New("unexpected empty entry")
-		}
-
-		e := &(*c)[i]
-		if pos := strings.Index(part, "@"); pos >= 0 {
-			if strings.HasSuffix(part, "%") {
-				if p, err := strconv.ParseFloat(part[pos+1:len(part)-1], 64); err != nil {
-					return fmt.Errorf("position %q not recognized", part[pos+1:])
-				} else {
-					e.pos = p / 100
-				}
-			} else {
-				if e.pos, err = strconv.ParseFloat(part[pos+1:], 64); err != nil {
-					return fmt.Errorf("position %q not recognized", part[pos+1:])
-				}
-			}
-			if e.pos < 0 || e.pos > 1 {
-				return fmt.Errorf("position %q not within range", part[pos+1:])
-			}
-			part = part[:pos]
-		} else if i == 0 {
-			e.pos = 0
-		} else if i == len(parts)-1 {
-			e.pos = 1
-		} else {
-			e.pos = math.NaN()
-			if missingAt == 0 {
-				missingAt = i
-			}
-		}
-		if !math.IsNaN(e.pos) && missingAt > 0 {
-			p := (*c)[missingAt-1].pos
-			step := (e.pos - p) / float64(i+1-missingAt)
-			for j := missingAt; j < i; j++ {
-				p += step
-				(*c)[j].pos = p
-			}
-			missingAt = 0
-		}
-
-		if e.Color, err = colorful.Hex(part); err != nil {
-			if col, ok := colornames.Map[strings.ToLower(part)]; !ok {
-				return fmt.Errorf("color %q not recognized", part)
-			} else {
-				e.Color, _ = colorful.MakeColor(col)
-			}
-		}
-		i++
-	}
-
-	return nil
+	return (*img.ColorGradient)(c).Parse(str)
 }
 
 func (c *ColorsFlag) String() string {
-	parts := make([]string, len(*c))
-	for i, e := range *c {
-		var hex string
-		if r, g, b := e.Color.RGB255(); r>>4 == r&0xf && g>>4 == g&0xf && b>>4 == b&0xf {
-			hex = fmt.Sprintf("#%1x%1x%1x", r&0xf, g&0xf, b&0xf)
-		} else {
-			hex = fmt.Sprintf("#%02x%02x%02x", r, g, b)
-		}
-		if (i == 0 && e.pos == 0) || (i == len(*c)-1 && e.pos == 1) {
-			parts[i] = hex
-		} else {
-			parts[i] = fmt.Sprintf("%s@%s", hex, formatFloat(e.pos))
-		}
+	if c == nil {
+		return ""
 	}
-	return strings.Join(parts, ",")
-}
-
-func (c *ColorsFlag) GetColorAt(p float64) color.Color {
-	last := len(*c) - 1
-	for i := 0; i < last; i++ {
-		if e0, e1 := (*c)[i], (*c)[i+1]; e0.pos <= p && p <= e1.pos {
-			return e0.Color.BlendHcl(e1.Color, (p-e0.pos)/(e1.pos-e0.pos)).Clamped()
-		}
-	}
-	return (*c)[last].Color
+	return (*img.ColorGradient)(c).String()
 }
 
 type SportsFlag []string
@@ -255,7 +156,7 @@ func (d *DistanceFlag) Set(str string) error {
 }
 
 func (d *DistanceFlag) String() string {
-	return formatFloat(float64(*d))
+	return conv.FormatFloat(float64(*d))
 }
 
 type PaceFlag time.Duration
@@ -295,7 +196,7 @@ func (p *PaceFlag) String() string {
 	return time.Duration(*p).String()
 }
 
-type CircleFlag Circle
+type CircleFlag geo.Circle
 
 func (c *CircleFlag) Type() string {
 	return "circle"
@@ -312,16 +213,16 @@ func (c *CircleFlag) Set(str string) error {
 	} else if lon, err := strconv.ParseFloat(parts[1], 64); err != nil {
 		return fmt.Errorf("longitude %q not recognized", parts[1])
 	} else if lat < -85 || lat > 85 {
-		return fmt.Errorf("latitude %q not within range", formatFloat(lat))
+		return fmt.Errorf("latitude %q not within range", conv.FormatFloat(lat))
 	} else if lon < -180 || lon > 180 {
-		return fmt.Errorf("longitude %q not within range", formatFloat(lon))
+		return fmt.Errorf("longitude %q not within range", conv.FormatFloat(lon))
 	} else {
 		*c = CircleFlag{
-			origin: newPointFromDegrees(lat, lon),
-			radius: 100,
+			Origin: geo.NewPointFromDegrees(lat, lon),
+			Radius: 100,
 		}
 		if len(parts) == 3 {
-			if c.radius, err = parseDistance(parts[2]); err != nil {
+			if c.Radius, err = parseDistance(parts[2]); err != nil {
 				return errors.New("radius " + err.Error())
 			}
 		}
@@ -330,10 +231,10 @@ func (c *CircleFlag) Set(str string) error {
 }
 
 func (c *CircleFlag) String() string {
-	if c == nil || Circle(*c).IsZero() {
+	if c == nil || geo.Circle(*c).IsZero() {
 		return ""
 	}
-	return Circle(*c).String()
+	return geo.Circle(*c).String()
 }
 
 var distanceRE = regexp.MustCompile(`^(.*\d)\s?(\w+)?$`)

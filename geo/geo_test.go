@@ -1,4 +1,4 @@
-package main
+package geo
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestMercatorMeters(t *testing.T) {
+func TestMercatorProjection(t *testing.T) {
 	testCases := []struct {
 		lat, lon float64
 	}{
@@ -21,7 +21,7 @@ func TestMercatorMeters(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
-			x, y := mercatorMeters(newPointFromDegrees(testCase.lat, testCase.lon))
+			x, y := NewPointFromDegrees(testCase.lat, testCase.lon).MercatorProjection()
 			if math.IsNaN(x) {
 				t.Fatal("expected x number")
 			}

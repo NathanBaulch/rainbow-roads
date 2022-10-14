@@ -1,12 +1,67 @@
-package main
+package worms
 
 import (
 	"bufio"
 	"encoding/binary"
 	"hash/crc32"
 	"image"
+	"image/color"
 	"io"
 )
+
+var grays = make([]color.Color, 0x100)
+
+func init() {
+	for i := range grays {
+		grays[i] = color.Gray{Y: uint8(i)}
+	}
+}
+
+func drawFill(im *image.Paletted, ci uint8) {
+	if len(im.Pix) > 0 {
+		im.Pix[0] = ci
+		for i := 1; i < len(im.Pix); i *= 2 {
+			copy(im.Pix[i:], im.Pix[:i])
+		}
+	}
+}
+
+type glowPlotter struct{ *image.Paletted }
+
+func (p *glowPlotter) Set(x, y int, c color.Color) {
+	p.SetColorIndex(x, y, c.(color.Gray).Y)
+}
+
+func (p *glowPlotter) SetColorIndex(x, y int, ci uint8) {
+	if p.setPixIfLower(x, y, ci) {
+		const sqrt2 = 1.414213562
+		if i := float64(ci) * sqrt2; i < float64(len(p.Palette)-2) {
+			ci = uint8(i)
+			p.setPixIfLower(x-1, y, ci)
+			p.setPixIfLower(x, y-1, ci)
+			p.setPixIfLower(x+1, y, ci)
+			p.setPixIfLower(x, y+1, ci)
+		}
+		if i := float64(ci) * sqrt2; i < float64(len(p.Palette)-2) {
+			ci = uint8(i)
+			p.setPixIfLower(x-1, y-1, ci)
+			p.setPixIfLower(x-1, y+1, ci)
+			p.setPixIfLower(x+1, y-1, ci)
+			p.setPixIfLower(x+1, y+1, ci)
+		}
+	}
+}
+
+func (p *glowPlotter) setPixIfLower(x, y int, ci uint8) bool {
+	if (image.Point{X: x, Y: y}.In(p.Rect)) {
+		i := p.PixOffset(x, y)
+		if p.Pix[i] > ci {
+			p.Pix[i] = ci
+			return true
+		}
+	}
+	return false
+}
 
 func optimizeFrames(ims []*image.Paletted) {
 	if len(ims) == 0 {
@@ -61,7 +116,8 @@ func optimizeFrames(ims []*image.Paletted) {
 
 type gifWriter struct {
 	*bufio.Writer
-	done bool
+	Comment string
+	done    bool
 }
 
 func (w *gifWriter) Write(p []byte) (nn int, err error) {
@@ -69,7 +125,7 @@ func (w *gifWriter) Write(p []byte) (nn int, err error) {
 	if !w.done {
 		// intercept application extension
 		if len(p) == 3 && p[0] == 0x21 && p[1] == 0xff && p[2] == 0x0b {
-			if n, err = w.writeExtension([]byte(fullTitle), 0xfe); err != nil {
+			if n, err = w.writeExtension([]byte(w.Comment), 0xfe); err != nil {
 				return
 			} else {
 				nn += n
@@ -107,6 +163,7 @@ func (w *gifWriter) writeExtension(b []byte, e byte) (nn int, err error) {
 
 type pngWriter struct {
 	io.Writer
+	Text string
 	done bool
 }
 
@@ -115,7 +172,7 @@ func (w *pngWriter) Write(p []byte) (nn int, err error) {
 	if !w.done {
 		// intercept first data chunk
 		if len(p) >= 8 && string(p[4:8]) == "IDAT" {
-			if n, err = w.writeChunk([]byte(fullTitle), "tEXt"); err != nil {
+			if n, err = w.writeChunk([]byte(w.Text), "tEXt"); err != nil {
 				return
 			} else {
 				nn += n

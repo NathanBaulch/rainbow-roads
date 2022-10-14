@@ -1,4 +1,4 @@
-package main
+package worms
 
 import (
 	"bufio"
@@ -50,29 +50,29 @@ func TestImageOptimizeFrames(t *testing.T) {
 
 func TestImageGifWriter(t *testing.T) {
 	b := &bytes.Buffer{}
-	w := &gifWriter{Writer: bufio.NewWriter(b)}
+	w := &gifWriter{Writer: bufio.NewWriter(b), Comment: "foo"}
 	if n, err := w.Write([]byte{0x21, 0xff, 0x0b}); err != nil {
 		t.Fatal(err)
-	} else if n != 33 {
-		t.Fatal("number of bytes written:", n, "!= 33")
+	} else if n != 10 {
+		t.Fatal("number of bytes written:", n, "!=", 10)
 	}
 	if err := w.Flush(); err != nil {
 		t.Fatal(err)
 	}
-	if !bytes.Contains(b.Bytes(), []byte(fullTitle)) {
+	if !bytes.Contains(b.Bytes(), []byte("foo")) {
 		t.Fatal("metadata text not found")
 	}
 }
 
 func TestImagePngWriter(t *testing.T) {
 	b := &bytes.Buffer{}
-	w := &pngWriter{Writer: b}
+	w := &pngWriter{Writer: b, Text: "foo"}
 	if n, err := w.Write([]byte("    IDAT")); err != nil {
 		t.Fatal(err)
-	} else if n != 46 {
-		t.Fatal("number of bytes written:", n, "!= 46")
+	} else if n != 23 {
+		t.Fatal("number of bytes written:", n, "!=", 23)
 	}
-	if !bytes.Contains(b.Bytes(), []byte(fullTitle)) {
+	if !bytes.Contains(b.Bytes(), []byte("foo")) {
 		t.Fatal("metadata text not found")
 	}
 }

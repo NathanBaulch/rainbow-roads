@@ -1,6 +1,6 @@
 A command line tool that animates your exercise maps, inspired by an [article by Andriy Yaremenko](https://medium.com/geospatial-analytics/how-to-animate-strava-gpx-tracks-in-qgis-8a8ca6b58ebc).
 
-![example output](lockdown_project.gif)
+![example worms output](lockdown_worms.gif)
 
 ## Features
 * Supports FIT, TCX, GPX files. It can also traverse into ZIP files for easy ingestion of bulk activity exports.
@@ -17,13 +17,12 @@ A command line tool that animates your exercise maps, inspired by an [article by
     --min_distance 3km \
     --max_pace 10m/km \
     --bounded_by -37.8,144.9,5km \
-    --output lockdown_project \
+    --output lockdown_worms \
     path/to/my/activity/data
 ```
 Some basic statistics are output to help validate the activities that were included and to aid in further refining filters.
 ```text
-activity files: 9,327
- 100% |████████████████████████████████████████| [3s:0s]            
+files:         9,327
 activities:    268
 records:       154,326
 sports:        running (268)
@@ -39,10 +38,14 @@ The easiest way to find the coordinates of a known location is to right-click on
 
 ## Options
 ```text
-Usage of rainbow-roads:
-      --output string   optional path of the generated file (default "out")
-      --format format   output file format string, supports gif, png, zip
-Filtering:
+Usage:
+  rainbow-roads [flags] [input]
+
+General flags:
+  -o, --output string   optional path of the generated file (default "out")
+  -f, --format string   output file format string, supports gif, png, zip (default "gif")
+
+Filtering flags:
       --sport sports            sports to include, can be specified multiple times, eg running, cycling
       --after date              date from which activities should be included
       --before date             date prior to which activities should be included
@@ -56,11 +59,12 @@ Filtering:
       --starts_near circle      region that activities must start from, eg 51.53,-0.21,1km
       --ends_near circle        region that activities must end in, eg 30.06,31.22,1km
       --passes_through circle   region that activities must pass through, eg 40.69,-74.12,10mi
-Rendering:
+
+Rendering flags:
       --frames uint        number of animation frames (default 200)
       --fps uint           animation frame rate (default 20)
-      --width uint         width of the generated image in pixels (default 500)
-      --colors colors      CSS linear-colors inspired color scheme string, eg red,yellow,green,blue,black (default #fff,#ff8,#911,#414,#007@.5,#003)
+  -w, --width uint         width of the generated image in pixels (default 500)
+      --colors colors      CSS linear-colors inspired color scheme string, eg red,yellow,green,blue,black (default #fff,#ff8@0.125,#911@0.25,#414@0.375,#007@0.5,#003)
       --color_depth uint   number of bits per color in the image palette (default 5)
       --speed float        how quickly activities should progress (default 1.25)
       --loop               start each activity sequentially and animate continuously
@@ -86,16 +90,29 @@ Simply install Go and run:
 go install github.com/NathanBaulch/rainbow-roads@latest
 ```
 
+## Paint
+A sub-command used to track street coverage, useful for #everystreet style challenges and to make animations more spectacular.
+
+![example paint output](lockdown_paint.png)
+
+## Features
+* Streets are painted green by running within a 25 meters threshold of them.
+* OpenStreetMap road data is automatically downloaded as needed, excluding alleyways, footpaths, trails and roads under construction.
+* A progress percentage is calculated by the ratio of green to red pixels.
+* Supports all the same activity filter options described above.
+
 ## Built with
 * [lucasb-eyer/go-colorful](https://github.com/lucasb-eyer/go-colorful) - color gradient interpolation
-* [schollz/progressbar](https://github.com/schollz/progressbar) - CLI progress bar
 * [tormoder/fit](https://github.com/tormoder/fit) - FIT file support
 * [llehouerou/go-tcx](https://github.com/llehouerou/go-tcx) - TCX file support
 * [tkrajina/gpxgo](https://github.com/tkrajina/gpxgo) - GPX file support
 * [kettek/apng](https://github.com/kettek/apng) - animated PNG file support
 * [araddon/dateparse](https://github.com/araddon/dateparse) - permissive date parsing
 * [bcicen/go-units](https://github.com/bcicen/go-units) - distance unit conversion
-* [StephaneBunel/bresenham](https://github.com/StephaneBunel/bresenham) - GPX distance calculation
+* [serjvanilla/go-overpass](https://github.com/serjvanilla/go-overpass) - OpenStreetMap client
+* [antonmedv/expr](https://github.com/antonmedv/expr) - expression language
+* [fogleman/gg](https://github.com/fogleman/gg) - 2D floating point renderer
+* [spf13/cobra](https://github.com/spf13/cobra) - CLI framework
 
 ## Future work
 * Improve rendering with smoother anti-aliasing

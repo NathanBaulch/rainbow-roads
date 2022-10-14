@@ -1,4 +1,4 @@
-package main
+package parse
 
 import (
 	"bytes"
@@ -21,7 +21,7 @@ func TestFITShortDistance(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if acts, err := parseFIT(w); err != nil {
+	if acts, err := parseFIT(w, &Selector{}); err != nil {
 		t.Fatal(err)
 	} else if len(acts) != 1 {
 		t.Fatal("expected 1 activity")
