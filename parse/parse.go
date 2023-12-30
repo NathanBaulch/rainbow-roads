@@ -69,10 +69,12 @@ func Parse(files []*scan.File, selector *Selector) ([]*Activity, *Stats, error) 
 	}
 	var startExtent, endExtent geo.Box
 
+	uniq := make(map[time.Time]bool)
+
 	for i := len(activities) - 1; i >= 0; i-- {
 		act := activities[i]
 		include := selector.PassesThrough.IsZero()
-		exclude := false
+		exclude := len(act.Records) == 0
 		for j, r := range act.Records {
 			if !selector.Bounded(r.Position) {
 				exclude = true
@@ -90,12 +92,13 @@ func Parse(files []*scan.File, selector *Selector) ([]*Activity, *Stats, error) 
 				include = true
 			}
 		}
-		if exclude || !include {
+		if exclude || !include || uniq[act.Records[0].Timestamp] {
 			j := len(activities) - 1
 			activities[i] = activities[j]
 			activities = activities[:j]
 			continue
 		}
+		uniq[act.Records[0].Timestamp] = true
 
 		if act.Sport == "" {
 			stats.SportCounts["unknown"]++
