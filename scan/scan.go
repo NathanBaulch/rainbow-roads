@@ -68,7 +68,7 @@ func walkPaths(paths []string, fn func(fsys fs.FS, path string) error) error {
 				if err := walkDir(fsys, name, fn); err != nil {
 					return err
 				}
-			} else if err := walkFile(fsys, path, fn); err != nil {
+			} else if err := walkFile(fsys, name, fn); err != nil {
 				return err
 			}
 		}
