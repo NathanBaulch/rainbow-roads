@@ -115,7 +115,7 @@ A sub-command used to track street coverage, useful for #everystreet style chall
 * [spf13/cobra](https://github.com/spf13/cobra) - CLI framework
 
 ## Future work
-* Improve rendering with smoother anti-aliasing
+* Improve rendering with smoother antialiasing
 * Provide option to strip time gaps in activities (pauses)
 * Support generating WebM files
 * Configurable dot size

@@ -12,7 +12,7 @@ import (
 func TestColorGradientParse(t *testing.T) {
 	testCases := []struct {
 		set    string
-		expect interface{}
+		expect any
 	}{
 		{"#fff", "#fff"},
 		{"#fff,#000", "#fff,#000"},

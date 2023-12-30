@@ -12,7 +12,7 @@ import (
 func TestSportsSet(t *testing.T) {
 	testCases := []struct {
 		sets   []string
-		expect interface{}
+		expect any
 	}{
 		{[]string{"Running"}, "Running"},
 		{[]string{"RUNNING"}, "RUNNING"},
@@ -50,7 +50,7 @@ func TestSportsSet(t *testing.T) {
 func TestTimeSet(t *testing.T) {
 	testCases := []struct {
 		set    string
-		expect interface{}
+		expect any
 	}{
 		{"19 Jan 2022", "2022-01-19 00:00:00 +0000 UTC"},
 		{"1645228800", "2022-02-19 00:00:00 +0000 UTC"},
@@ -82,7 +82,7 @@ func TestTimeSet(t *testing.T) {
 func TestDurationSet(t *testing.T) {
 	testCases := []struct {
 		set    string
-		expect interface{}
+		expect any
 	}{
 		{"1h", "1h0m0s"},
 		{"1h2m3s", "1h2m3s"},
@@ -116,7 +116,7 @@ func TestDurationSet(t *testing.T) {
 func TestDistanceSet(t *testing.T) {
 	testCases := []struct {
 		set    string
-		expect interface{}
+		expect any
 	}{
 		{"3000", "3000"},
 		{"3000m", "3000"},
@@ -157,7 +157,7 @@ func TestDistanceSet(t *testing.T) {
 func TestPaceFlag(t *testing.T) {
 	testCases := []struct {
 		set    string
-		expect interface{}
+		expect any
 	}{
 		{"1s", "1s"},
 		{"1m", "1m0s"},
@@ -195,7 +195,7 @@ func TestPaceFlag(t *testing.T) {
 func TestRegionSet(t *testing.T) {
 	testCases := []struct {
 		set    string
-		expect interface{}
+		expect any
 	}{
 		{"1,2", "1,2,100"},
 		{"1,2,3", "1,2,3"},

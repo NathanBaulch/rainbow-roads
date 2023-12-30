@@ -1,6 +1,7 @@
 package parse
 
 import (
+	"errors"
 	"io"
 
 	"github.com/NathanBaulch/rainbow-roads/geo"
@@ -10,7 +11,8 @@ import (
 func parseFIT(r io.Reader, selector *Selector) ([]*Activity, error) {
 	f, err := fit.Decode(r)
 	if err != nil {
-		if _, ok := err.(fit.FormatError); ok {
+		var ferr fit.FormatError
+		if errors.As(err, &ferr) {
 			return nil, nil
 		}
 		return nil, err

@@ -1,6 +1,7 @@
 package paint
 
 import (
+	"errors"
 	"image"
 	"image/color"
 	"image/png"
@@ -69,7 +70,8 @@ func Run(opts *Options) error {
 	}
 
 	if fi, err := os.Stat(o.Output); err != nil {
-		if _, ok := err.(*fs.PathError); !ok {
+		var perr *fs.PathError
+		if !errors.As(err, &perr) {
 			return err
 		}
 	} else if fi.IsDir() {
@@ -223,7 +225,7 @@ func renderStep() error {
 
 type wayEnv way
 
-func (e *wayEnv) Fetch(k interface{}) interface{} {
+func (e *wayEnv) Fetch(k any) any {
 	switch k.(string) {
 	case "highway":
 		return e.Highway

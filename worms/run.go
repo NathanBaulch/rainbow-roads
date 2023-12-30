@@ -3,6 +3,7 @@ package worms
 import (
 	"archive/zip"
 	"bufio"
+	"errors"
 	"fmt"
 	"image"
 	"image/color"
@@ -69,7 +70,8 @@ func Run(opts *Options) error {
 	}
 
 	if fi, err := os.Stat(o.Output); err != nil {
-		if _, ok := err.(*fs.PathError); !ok {
+		var perr *fs.PathError
+		if !errors.As(err, &perr) {
 			return err
 		}
 	} else if fi.IsDir() {

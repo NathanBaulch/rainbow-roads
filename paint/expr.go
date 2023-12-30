@@ -29,7 +29,7 @@ func mustCompile(input string, ops ...expr.Option) *vm.Program {
 	}
 }
 
-func mustRun(program *vm.Program, env interface{}) interface{} {
+func mustRun(program *vm.Program, env any) any {
 	if res, err := expr.Run(program, env); err != nil {
 		panic(err)
 	} else {

@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"compress/gzip"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -44,7 +45,7 @@ func walkPaths(paths []string, fn func(fsys fs.FS, path string) error) error {
 		if strings.ContainsAny(path, "*?[") {
 			var err error
 			if paths, err = filepath.Glob(path); err != nil {
-				if err == filepath.ErrBadPattern {
+				if errors.Is(err, filepath.ErrBadPattern) {
 					return fmt.Errorf("input path pattern %q malformed", path)
 				}
 				return err
@@ -58,7 +59,8 @@ func walkPaths(paths []string, fn func(fsys fs.FS, path string) error) error {
 			}
 			fsys := os.DirFS(dir)
 			if fi, err := os.Stat(path); err != nil {
-				if _, ok := err.(*fs.PathError); ok {
+				var perr *fs.PathError
+				if errors.As(err, &perr) {
 					return fmt.Errorf("input path %q not found", path)
 				}
 				return err

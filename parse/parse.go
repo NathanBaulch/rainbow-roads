@@ -268,7 +268,7 @@ func sprintSportStats(p *message.Printer, stats map[string]int) string {
 		p0, p1 := pairs[i], pairs[j]
 		return p0.v > p1.v || (p0.v == p1.v && p0.k < p1.k)
 	})
-	a := make([]interface{}, len(stats)*2)
+	a := make([]any, len(stats)*2)
 	i = 0
 	for _, kv := range pairs {
 		a[i] = kv.k
