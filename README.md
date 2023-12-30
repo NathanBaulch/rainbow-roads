@@ -22,17 +22,17 @@ A command line tool that animates your exercise maps, inspired by an [article by
 ```
 Some basic statistics are output to help validate the activities that were included and to aid in further refining filters.
 ```text
-files:         9,327
-activities:    268
-records:       154,326
-sports:        running (268)
-period:        1.6 years (2020-08-02 to 2022-02-24)
-duration:      16m1s to 1h38m27s, average 46m11s, total 206h20m19s
-distance:      3.0km to 16.8km, average 7.8km, total 2,102.2km
-pace:          4m25s/km to 9m21s/km, average 5m53s/km
-bounds:        -37.8,144.9,4987.12259
-starts within: -37.8,144.9,4807.96373
-ends within:   -37.8,144.9,4912.4696
+files:         55,536
+activities:    272
+records:       196,092
+sports:        running (272)
+period:        6.7 years (2017-04-08 to 2023-12-21)
+duration:      26m23s to 1h49m52s, average 1h0m6s, total 272h27m32s
+distance:      6.0km to 18.0km, average 10.6km, total 2,876.5km
+pace:          4m13s/km to 7m54s/km, average 5m40s/km
+bounds:        -37.8,144.9,4041.90923
+starts within: -37.8,144.9,585.60073
+ends within:   -37.8,144.9,3934.96018
 ```
 The easiest way to find the coordinates of a known location is to right-click on it in Google Maps and select the first menu item.
 
