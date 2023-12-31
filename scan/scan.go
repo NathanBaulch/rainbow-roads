@@ -26,7 +26,7 @@ func Scan(paths []string) ([]*File, error) {
 		if ext == ".gz" {
 			ext = filepath.Ext(path[:len(path)-3])
 			opener = func() (io.Reader, error) {
-				if r, err := opener(); err != nil {
+				if r, err := fsys.Open(path); err != nil {
 					return nil, err
 				} else {
 					return gzip.NewReader(r)
