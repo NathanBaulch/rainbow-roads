@@ -75,7 +75,7 @@ Rendering flags:
 1. Download the latest release of rainbow-roads and extract the ZIP archive into the same directory.
    * _Advanced:_ Move the rainbow-roads.exe to a more permanent location in your path.
 2. Request a copy of your activity data.
-   * **Garmin:** Follow the "Export All Garmin Data Using Account Management Center" directions in [this](https://support.strava.com/hc/en-us/articles/216918437-Exporting-your-Data-and-Bulk-Export#Bulk) support article.
+   * **Garmin:** Follow the "Export All Garmin Data Using Account Management Center" directions in [this](https://support.garmin.com/en-AU/?faq=W1TvTPW8JZ6LfJSfK512Q8) support article.
    * **Strava:** Follow the "Bulk Export" directions in [this](https://support.strava.com/hc/en-us/articles/216918437-Exporting-your-Data-and-Bulk-Export#Bulk) support article.
 3. Download the ZIP file linked in the email they send. No need to extract it.
 4. Open the standard Command Prompt app.
