@@ -110,7 +110,7 @@ A sub-command used to track street coverage, useful for #everystreet style chall
 * [araddon/dateparse](https://github.com/araddon/dateparse) - permissive date parsing
 * [bcicen/go-units](https://github.com/bcicen/go-units) - distance unit conversion
 * [serjvanilla/go-overpass](https://github.com/serjvanilla/go-overpass) - OpenStreetMap client
-* [antonmedv/expr](https://github.com/antonmedv/expr) - expression language
+* [expr-lang/expr](https://github.com/expr-lang/expr) - expression language
 * [fogleman/gg](https://github.com/fogleman/gg) - 2D floating point renderer
 * [spf13/cobra](https://github.com/spf13/cobra) - CLI framework
 

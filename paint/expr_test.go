@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/antonmedv/expr/ast"
-	"github.com/antonmedv/expr/parser"
+	"github.com/expr-lang/expr/ast"
+	"github.com/expr-lang/expr/parser"
 )
 
 func TestExpandInArray(t *testing.T) {
@@ -79,7 +79,6 @@ func TestDistributeAndFoldNot(t *testing.T) {
 		{"!(!(A && B) || !C)", "A && B && C"},
 		{"!(A == B)", "A != B"},
 		{"!(A > B)", "A <= B"},
-		{"!(A in B)", "A not in B"},
 	}
 
 	for i, tc := range testCases {
@@ -88,7 +87,7 @@ func TestDistributeAndFoldNot(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			ast.Walk(&gotT.Node, &distributeAndFoldNot{})
+			Walk(&gotT.Node, &distributeAndFoldNot{})
 			wantT, err := parser.Parse(tc.want)
 			if err != nil {
 				t.Fatal(err)

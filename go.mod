@@ -6,9 +6,9 @@ toolchain go1.23.4
 
 require (
 	github.com/StephaneBunel/bresenham v0.0.0-20211027152503-ec76d7b8e923
-	github.com/antonmedv/expr v1.9.0
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
 	github.com/bcicen/go-units v1.0.5
+	github.com/expr-lang/expr v1.16.9
 	github.com/fogleman/gg v1.3.0
 	github.com/kettek/apng v0.0.0-20220823221153-ff692776a607
 	github.com/llehouerou/go-tcx v0.0.0-20161119054955-2b6af946ac47

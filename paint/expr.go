@@ -1,9 +1,9 @@
 package paint
 
 import (
-	"github.com/antonmedv/expr"
-	"github.com/antonmedv/expr/ast"
-	"github.com/antonmedv/expr/vm"
+	"github.com/expr-lang/expr"
+	"github.com/expr-lang/expr/ast"
+	"github.com/expr-lang/expr/vm"
 )
 
 var operatorPairs = map[string]string{
@@ -39,9 +39,7 @@ func mustRun(program *vm.Program, env any) any {
 
 type expandInArray struct{}
 
-func (*expandInArray) Enter(*ast.Node) {}
-
-func (*expandInArray) Exit(node *ast.Node) {
+func (*expandInArray) Visit(node *ast.Node) {
 	if bi := asBinaryIn(*node); bi != nil {
 		if an, ok := bi.Right.(*ast.ArrayNode); ok {
 			if len(an.Nodes) == 0 {
@@ -79,9 +77,7 @@ func (*expandInArray) Exit(node *ast.Node) {
 
 type expandInRange struct{}
 
-func (*expandInRange) Enter(*ast.Node) {}
-
-func (*expandInRange) Exit(node *ast.Node) {
+func (*expandInRange) Visit(node *ast.Node) {
 	if bi := asBinaryIn(*node); bi != nil {
 		if br, ok := bi.Right.(*ast.BinaryNode); ok && br.Operator == ".." {
 			if getValue(br.Left) == getValue(br.Right) {
@@ -156,7 +152,7 @@ func (d *distributeAndFoldNot) Enter(node *ast.Node) {
 				ast.Patch(node, bn)
 			}
 		} else if n := asUnaryNot(un.Node); n != nil {
-			ast.Walk(&n.Node, d)
+			Walk(&n.Node, d)
 			ast.Patch(node, n.Node)
 		} else if b, ok := un.Node.(*ast.BoolNode); ok {
 			b.Value = !b.Value
@@ -170,7 +166,7 @@ func (*distributeAndFoldNot) Exit(*ast.Node) {}
 func toDNF(node *ast.Node) {
 	for limit := 1000; limit >= 0; limit-- {
 		f := &dnf{}
-		ast.Walk(node, f)
+		Walk(node, f)
 		if !f.applied {
 			return
 		}

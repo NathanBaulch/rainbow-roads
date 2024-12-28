@@ -15,7 +15,7 @@ import (
 	"github.com/NathanBaulch/rainbow-roads/img"
 	"github.com/NathanBaulch/rainbow-roads/parse"
 	"github.com/NathanBaulch/rainbow-roads/scan"
-	"github.com/antonmedv/expr"
+	"github.com/expr-lang/expr"
 	"github.com/fogleman/gg"
 	"golang.org/x/image/colornames"
 	"golang.org/x/text/language"
@@ -152,7 +152,12 @@ func renderStep() error {
 		gc.SetStrokeStyle(gg.NewSolidPattern(strokeColor))
 
 		for _, w := range roads {
-			if !primary || mustRun(primaryExpr, (*wayEnv)(w)).(bool) {
+			env := map[string]string{
+				"highway": w.Highway,
+				"access":  w.Access,
+				"surface": w.Surface,
+			}
+			if !primary || mustRun(primaryExpr, env).(bool) {
 				lineWidth := 10.0
 				switch w.Highway {
 				case "motorway", "trunk", "primary", "secondary", "tertiary":
@@ -220,20 +225,6 @@ func renderStep() error {
 	en.Printf("progress:      %.2f%%\n", 100*float64(done)/float64(done+pend))
 
 	im = gc.Image()
-	return nil
-}
-
-type wayEnv way
-
-func (e *wayEnv) Fetch(k any) any {
-	switch k.(string) {
-	case "highway":
-		return e.Highway
-	case "access":
-		return e.Access
-	case "surface":
-		return e.Surface
-	}
 	return nil
 }
 

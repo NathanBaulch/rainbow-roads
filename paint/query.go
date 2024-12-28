@@ -9,10 +9,20 @@ import (
 
 	"github.com/NathanBaulch/rainbow-roads/conv"
 	"github.com/NathanBaulch/rainbow-roads/geo"
-	"github.com/antonmedv/expr/ast"
-	"github.com/antonmedv/expr/parser"
+	"github.com/expr-lang/expr/ast"
+	"github.com/expr-lang/expr/builtin"
+	"github.com/expr-lang/expr/parser"
 	"golang.org/x/exp/slices"
 )
+
+func init() {
+	clear(builtin.Builtins)
+	clear(builtin.Index)
+	clear(builtin.Names)
+	builtin.Builtins = []*builtin.Function{{Name: "is_tag"}}
+	builtin.Index["is_tag"] = 0
+	builtin.Names[0] = "is_tag"
+}
 
 func buildQuery(region geo.Circle, filter string) (string, error) {
 	if crits, err := buildCriteria(filter); err != nil {
@@ -41,11 +51,11 @@ func buildCriteria(filter string) ([]string, error) {
 
 	ast.Walk(&tree.Node, &expandInArray{})
 	ast.Walk(&tree.Node, &expandInRange{})
-	ast.Walk(&tree.Node, &distributeAndFoldNot{})
+	Walk(&tree.Node, &distributeAndFoldNot{})
 	toDNF(&tree.Node)
 
 	qb := queryBuilder{}
-	ast.Walk(&tree.Node, &qb)
+	Walk(&tree.Node, &qb)
 	if qb.err != nil {
 		return nil, qb.err
 	}
@@ -177,9 +187,11 @@ func (q *queryBuilder) Exit(node *ast.Node) {
 				if _, ok := n.Right.(*ast.StringNode); ok {
 					rhs = regexp.QuoteMeta(rhs[:len(rhs)-1]) + "$" + rhs[len(rhs)-1:]
 				}
+			case "matches":
+				op = "~"
 			}
-			_, okl := n.Left.(*ast.FunctionNode)
-			_, okr := n.Right.(*ast.FunctionNode)
+			_, okl := n.Left.(*ast.CallNode)
+			_, okr := n.Right.(*ast.CallNode)
 			if okl || okr {
 				root = false
 			}
@@ -203,25 +215,18 @@ func (q *queryBuilder) Exit(node *ast.Node) {
 				q.push(lhs, bangIf(op, not), rhs)
 			}
 		}
-	case *ast.MatchesNode:
-		rhs, lhs := q.pop(), q.pop()
-		if root {
-			q.push("[", lhs, bangIf("~", not), rhs, "]")
-		} else {
-			q.push(lhs, bangIf("~", not), rhs)
+	case *ast.BuiltinNode:
+		q.push("[", bangIf(q.pop(), not), "]")
+	case *ast.CallNode:
+		name := n.Callee.String()
+		parts := make([]any, 0, len(n.Arguments)+3)
+		parts = append(parts, bangIf(name, not), "(")
+		for range n.Arguments {
+			parts = append(parts, q.pop())
 		}
-	case *ast.FunctionNode:
-		if root && n.Name == "is_tag" && len(n.Arguments) == 1 {
-			q.push("[", bangIf(q.pop(), not), "]")
-		} else {
-			parts := make([]any, 0, len(n.Arguments)+3)
-			parts = append(parts, bangIf(n.Name, not), "(")
-			for range n.Arguments {
-				parts = append(parts, q.pop())
-			}
-			parts = append(parts, ")")
-			q.push(parts...)
-		}
+		parts = append(parts, ")")
+		q.pop()
+		q.push(parts...)
 	case *ast.ConditionalNode:
 		e2, e1 := q.pop(), q.pop()
 		q.push(q.pop(), "?", e1, ":", e2)
