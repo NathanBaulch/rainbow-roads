@@ -6,16 +6,17 @@ import (
 	"testing"
 
 	"github.com/NathanBaulch/rainbow-roads/geo"
+	"github.com/paulmach/orb"
 )
 
 func TestBuildQuery(t *testing.T) {
 	testCases := []struct {
-		origin       geo.Point
+		origin       orb.Point
 		radius       float64
 		filter, want string
 	}{
-		{geo.NewPointFromDegrees(1, 2), 3, "is_tag(highway)", `[out:json];(way(around:3,1,2)[highway];);out tags geom qt;`},
-		{geo.NewPointFromDegrees(4, 5), 6, "is_tag(highway) or is_tag(service)", `[out:json];(way(around:6,4,5)[highway];way(around:6,4,5)[service];);out tags geom qt;`},
+		{orb.Point{1, 2}, 3, "is_tag(highway)", `[out:json];(way(around:3,2,1)[highway];);out tags geom qt;`},
+		{orb.Point{4, 5}, 6, "is_tag(highway) or is_tag(service)", `[out:json];(way(around:6,5,4)[highway];way(around:6,5,4)[service];);out tags geom qt;`},
 	}
 
 	for i, tc := range testCases {

@@ -17,6 +17,8 @@ import (
 	"github.com/NathanBaulch/rainbow-roads/scan"
 	"github.com/expr-lang/expr"
 	"github.com/fogleman/gg"
+	"github.com/paulmach/orb"
+	"github.com/paulmach/orb/project"
 	"golang.org/x/image/colornames"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -121,13 +123,15 @@ func fetchStep() error {
 }
 
 func renderStep() error {
-	oX, oY := o.Region.Origin.MercatorProjection()
-	scale := math.Cos(o.Region.Origin.Lat) * 0.9 * float64(o.Width) / (2 * o.Region.Radius)
+	proj := project.WGS84.ToMercator
+	origin := project.Point(o.Region.Origin, proj)
+	scale := math.Cos(geo.DegreesToRadians(o.Region.Origin.Lat())) * 0.9 * float64(o.Width) / (2 * o.Region.Radius)
+	offset := float64(o.Width) / 2
 
-	drawLine := func(gc *gg.Context, pt geo.Point) {
-		x, y := pt.MercatorProjection()
-		x = float64(o.Width)/2 + (x-oX)*scale
-		y = float64(o.Width)/2 - (y-oY)*scale
+	drawLine := func(gc *gg.Context, pt orb.Point) {
+		pt = project.Point(pt, proj)
+		x := offset + (pt[0]-origin[0])*scale
+		y := offset - (pt[1]-origin[1])*scale
 		gc.LineTo(x, y)
 	}
 	drawActs := func(gc *gg.Context, lineWidth float64) {
@@ -189,7 +193,7 @@ func renderStep() error {
 	maskGC.SetColor(color.Transparent)
 	maskGC.Clear()
 	maskGC.SetColor(color.Black)
-	maskGC.DrawCircle(float64(o.Width)/2, float64(o.Width)/2, 0.9*float64(o.Width)/2)
+	maskGC.DrawCircle(offset, offset, 0.9*float64(o.Width)/2)
 	maskGC.Fill()
 	_ = gc.SetMask(maskGC.AsMask())
 	drawWays(true, pendPriCol)
@@ -198,7 +202,7 @@ func renderStep() error {
 	maskGC.SetColor(color.Transparent)
 	maskGC.Clear()
 	maskGC.SetColor(color.Black)
-	maskGC.DrawCircle(float64(o.Width)/2, float64(o.Width)/2, 0.9*float64(o.Width)/2)
+	maskGC.DrawCircle(offset, offset, 0.9*float64(o.Width)/2)
 	maskGC.Fill()
 	_ = gc.SetMask(maskGC.AsMask())
 	drawWays(true, donePriCol)

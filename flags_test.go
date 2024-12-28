@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/NathanBaulch/rainbow-roads/geo"
+	"github.com/paulmach/orb"
 )
 
 func TestSportsSet(t *testing.T) {
@@ -245,10 +246,10 @@ func TestRegionContains(t *testing.T) {
 	if err := (*CircleFlag)(c).Set("1,2,3"); err != nil {
 		t.Fatal(err)
 	}
-	if !c.Contains(geo.Point{Lat: 0.0174536, Lon: 0.0349068}) {
+	if !c.Contains(orb.Point{2.000012316, 1.000017617}) {
 		t.Fatal("expected contains")
 	}
-	if c.Contains(geo.Point{Lat: 0.0174537, Lon: 0.0349069}) {
+	if c.Contains(orb.Point{2.000018046, 1.000023347}) {
 		t.Fatal("expected not contains")
 	}
 }

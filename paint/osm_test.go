@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/NathanBaulch/rainbow-roads/geo"
+	"github.com/paulmach/orb"
 	"github.com/serjvanilla/go-overpass"
 )
 
@@ -28,8 +29,8 @@ func TestPackUnpackWays(t *testing.T) {
 		t.Fatalf("ways len %d != %d", len(out), 1)
 	} else if len(out[0].Geometry) != 1 {
 		t.Fatalf("geometry len %d != %d", len(out[0].Geometry), 1)
-	} else if !(geo.Circle{Origin: out[0].Geometry[0], Radius: 0.002}).Contains(geo.NewPointFromDegrees(1, 2)) {
-		t.Fatalf("geometry %+v != %+v", out[0].Geometry[0], geo.NewPointFromDegrees(1, 2))
+	} else if !(geo.Circle{Origin: out[0].Geometry[0], Radius: 0.002}).Contains(orb.Point{2, 1}) {
+		t.Fatalf("geometry %+v != %+v", out[0].Geometry[0], orb.Point{2, 1})
 	} else if out[0].Highway != "primary" {
 		t.Fatalf("highway %s != %s", out[0].Highway, "primary")
 	} else if out[0].Access != "public" {

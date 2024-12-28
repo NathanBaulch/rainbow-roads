@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/NathanBaulch/rainbow-roads/geo"
+	"github.com/paulmach/orb"
 	"github.com/tkrajina/gpxgo/gpx"
 )
 
@@ -86,10 +87,10 @@ func parseGPX(r io.Reader, selector *Selector) ([]*Activity, error) {
 				p1 = p
 				act.Records = append(act.Records, &Record{
 					Timestamp: p.Timestamp,
-					Position:  geo.NewPointFromDegrees(p.Latitude, p.Longitude),
+					Position:  orb.Point{p.Longitude, p.Latitude},
 				})
 				if i > 0 {
-					act.Distance += act.Records[i-1].Position.DistanceTo(act.Records[i].Position)
+					act.Distance += geo.DistanceHaversine(act.Records[i-1].Position, act.Records[i].Position)
 				}
 			}
 		}

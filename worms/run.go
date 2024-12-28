@@ -19,12 +19,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/NathanBaulch/rainbow-roads/geo"
 	"github.com/NathanBaulch/rainbow-roads/img"
 	"github.com/NathanBaulch/rainbow-roads/parse"
 	"github.com/NathanBaulch/rainbow-roads/scan"
 	"github.com/StephaneBunel/bresenham"
 	"github.com/kettek/apng"
+	"github.com/paulmach/orb"
+	"github.com/paulmach/orb/project"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
@@ -36,7 +37,7 @@ var (
 	files      []*scan.File
 	activities []*parse.Activity
 	maxDur     time.Duration
-	extent     geo.Box
+	extent     orb.Bound
 	images     []*image.Paletted
 )
 
@@ -129,14 +130,14 @@ func renderStep() error {
 		})
 	}
 
-	minX, minY := extent.Min.MercatorProjection()
-	maxX, maxY := extent.Max.MercatorProjection()
-	dX, dY := maxX-minX, maxY-minY
+	proj := project.WGS84.ToMercator
+	ext := project.Bound(extent, proj)
+	dX, dY := ext.Right()-ext.Left(), ext.Top()-ext.Bottom()
 	scale := float64(o.Width) / dX
 	height := uint(dY * scale)
 	scale *= 0.9
-	minX -= 0.05 * dX
-	maxY += 0.05 * dY
+	ext.Min[0] -= 0.05 * dX
+	ext.Max[1] += 0.05 * dY
 	tScale := 1 / (o.Speed * float64(maxDur))
 	for i, act := range activities {
 		ts0 := act.Records[0].Timestamp
@@ -145,9 +146,9 @@ func renderStep() error {
 			tOffset = float64(i) / float64(len(activities))
 		}
 		for _, r := range act.Records {
-			x, y := r.Position.MercatorProjection()
-			r.X = int((x - minX) * scale)
-			r.Y = int((maxY - y) * scale)
+			p := project.Point(r.Position, proj)
+			r.X = int((p.X() - ext.Left()) * scale)
+			r.Y = int((ext.Top() - p.Y()) * scale)
 			r.Percent = tOffset + float64(r.Timestamp.Sub(ts0))*tScale
 		}
 	}

@@ -13,6 +13,7 @@ import (
 
 	"github.com/NathanBaulch/rainbow-roads/geo"
 	"github.com/NathanBaulch/rainbow-roads/scan"
+	"github.com/paulmach/orb"
 	"golang.org/x/exp/slices"
 	"golang.org/x/text/message"
 )
@@ -66,7 +67,7 @@ func Parse(files []*scan.File, selector *Selector) ([]*Activity, *Stats, error) 
 		MinDistance: math.MaxFloat64,
 		MinPace:     time.Duration(math.MaxInt64),
 	}
-	var startExtent, endExtent geo.Box
+	var startExtent, endExtent orb.Bound
 
 	uniq := make(map[time.Time]bool)
 
@@ -137,10 +138,22 @@ func Parse(files []*scan.File, selector *Selector) ([]*Activity, *Stats, error) 
 		stats.SumDistance += act.Distance
 
 		for _, r := range act.Records {
-			stats.Extent = stats.Extent.Enclose(r.Position)
+			if stats.Extent.IsZero() {
+				stats.Extent = orb.Bound{Min: r.Position, Max: r.Position}
+			} else {
+				stats.Extent = stats.Extent.Extend(r.Position)
+			}
 		}
-		startExtent = startExtent.Enclose(act.Records[0].Position)
-		endExtent = endExtent.Enclose(act.Records[len(act.Records)-1].Position)
+		if pt := act.Records[0].Position; startExtent.IsZero() {
+			startExtent = orb.Bound{Min: pt, Max: pt}
+		} else {
+			startExtent = startExtent.Extend(pt)
+		}
+		if pt := act.Records[len(act.Records)-1].Position; endExtent.IsZero() {
+			endExtent = orb.Bound{Min: pt, Max: pt}
+		} else {
+			endExtent = endExtent.Extend(pt)
+		}
 	}
 
 	if len(activities) == 0 {
@@ -153,10 +166,10 @@ func Parse(files []*scan.File, selector *Selector) ([]*Activity, *Stats, error) 
 	stats.EndsNear = geo.Circle{Origin: endExtent.Center()}
 	for _, act := range activities {
 		for _, r := range act.Records {
-			stats.BoundedBy = stats.BoundedBy.Enclose(r.Position)
+			stats.BoundedBy = stats.BoundedBy.Extend(r.Position)
 		}
-		stats.StartsNear = stats.StartsNear.Enclose(act.Records[0].Position)
-		stats.EndsNear = stats.EndsNear.Enclose(act.Records[len(act.Records)-1].Position)
+		stats.StartsNear = stats.StartsNear.Extend(act.Records[0].Position)
+		stats.EndsNear = stats.EndsNear.Extend(act.Records[len(act.Records)-1].Position)
 	}
 
 	return activities, stats, nil
@@ -198,19 +211,19 @@ func (s *Selector) Pace(duration time.Duration, distance float64) bool {
 		(s.MaxPace == 0 || pace < s.MaxPace)
 }
 
-func (s *Selector) Bounded(pt geo.Point) bool {
+func (s *Selector) Bounded(pt orb.Point) bool {
 	return s.BoundedBy.IsZero() || s.BoundedBy.Contains(pt)
 }
 
-func (s *Selector) Starts(pt geo.Point) bool {
+func (s *Selector) Starts(pt orb.Point) bool {
 	return s.StartsNear.IsZero() || s.StartsNear.Contains(pt)
 }
 
-func (s *Selector) Ends(pt geo.Point) bool {
+func (s *Selector) Ends(pt orb.Point) bool {
 	return s.EndsNear.IsZero() || s.EndsNear.Contains(pt)
 }
 
-func (s *Selector) Passes(pt geo.Point) bool {
+func (s *Selector) Passes(pt orb.Point) bool {
 	return s.PassesThrough.IsZero() || s.PassesThrough.Contains(pt)
 }
 
@@ -222,7 +235,7 @@ type Activity struct {
 
 type Record struct {
 	Timestamp time.Time
-	Position  geo.Point
+	Position  orb.Point
 	X, Y      int
 	Percent   float64
 }
@@ -235,7 +248,7 @@ type Stats struct {
 	MinDistance, MaxDistance, SumDistance float64
 	MinPace, MaxPace                      time.Duration
 	BoundedBy, StartsNear, EndsNear       geo.Circle
-	Extent                                geo.Box
+	Extent                                orb.Bound
 }
 
 func (s *Stats) Print(p *message.Printer) {

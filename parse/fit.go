@@ -5,7 +5,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/NathanBaulch/rainbow-roads/geo"
+	"github.com/paulmach/orb"
 	"github.com/tormoder/fit"
 )
 
@@ -46,7 +46,7 @@ func parseFIT(r io.Reader, selector *Selector) ([]*Activity, error) {
 			if !rec.PositionLat.Invalid() && !rec.PositionLong.Invalid() {
 				act.Records = append(act.Records, &Record{
 					Timestamp: rec.Timestamp,
-					Position:  geo.NewPointFromSemicircles(rec.PositionLat.Semicircles(), rec.PositionLong.Semicircles()),
+					Position:  orb.Point{rec.PositionLong.Degrees(), rec.PositionLat.Degrees()},
 				})
 			}
 		}

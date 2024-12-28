@@ -3,8 +3,8 @@ package parse
 import (
 	"io"
 
-	"github.com/NathanBaulch/rainbow-roads/geo"
 	"github.com/llehouerou/go-tcx"
+	"github.com/paulmach/orb"
 )
 
 func parseTCX(r io.Reader, selector *Selector) ([]*Activity, error) {
@@ -43,7 +43,7 @@ func parseTCX(r io.Reader, selector *Selector) ([]*Activity, error) {
 				t1 = t
 				act.Records = append(act.Records, &Record{
 					Timestamp: t.Time,
-					Position:  geo.NewPointFromDegrees(t.LatitudeInDegrees, t.LongitudeInDegrees),
+					Position:  orb.Point{t.LongitudeInDegrees, t.LatitudeInDegrees},
 				})
 			}
 		}

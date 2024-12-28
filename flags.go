@@ -15,6 +15,7 @@ import (
 	"github.com/NathanBaulch/rainbow-roads/parse"
 	"github.com/araddon/dateparse"
 	"github.com/bcicen/go-units"
+	"github.com/paulmach/orb"
 	"github.com/spf13/pflag"
 )
 
@@ -218,7 +219,7 @@ func (c *CircleFlag) Set(str string) error {
 		return fmt.Errorf("longitude %q not within range", conv.FormatFloat(lon))
 	} else {
 		*c = CircleFlag{
-			Origin: geo.NewPointFromDegrees(lat, lon),
+			Origin: orb.Point{lon, lat},
 			Radius: 1000,
 		}
 		if len(parts) == 3 {

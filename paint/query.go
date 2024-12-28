@@ -30,8 +30,8 @@ func buildQuery(region geo.Circle, filter string) (string, error) {
 	} else {
 		prefix := fmt.Sprintf("way(around:%s,%s,%s)",
 			conv.FormatFloat(region.Radius),
-			conv.FormatFloat(geo.RadiansToDegrees(region.Origin.Lat)),
-			conv.FormatFloat(geo.RadiansToDegrees(region.Origin.Lon)),
+			conv.FormatFloat(region.Origin.Lat()),
+			conv.FormatFloat(region.Origin.Lon()),
 		)
 		parts := make([]string, 0, len(crits)*3+2)
 		parts = append(parts, "[out:json];(")

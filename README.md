@@ -106,6 +106,7 @@ A sub-command used to track street coverage, useful for #everystreet style chall
 * [tormoder/fit](https://github.com/tormoder/fit) - FIT file support
 * [llehouerou/go-tcx](https://github.com/llehouerou/go-tcx) - TCX file support
 * [tkrajina/gpxgo](https://github.com/tkrajina/gpxgo) - GPX file support
+* [paulmach/orb](https://github.com/paulmach/orb) - Geospatial utilities
 * [kettek/apng](https://github.com/kettek/apng) - animated PNG file support
 * [araddon/dateparse](https://github.com/araddon/dateparse) - permissive date parsing
 * [bcicen/go-units](https://github.com/bcicen/go-units) - distance unit conversion

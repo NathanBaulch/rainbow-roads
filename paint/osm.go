@@ -10,14 +10,14 @@ import (
 	"path"
 	"time"
 
-	"github.com/NathanBaulch/rainbow-roads/geo"
+	"github.com/paulmach/orb"
 	"github.com/serjvanilla/go-overpass"
 	"github.com/vmihailenco/msgpack/v5"
 	"golang.org/x/exp/slices"
 )
 
 type way struct {
-	Geometry []geo.Point
+	Geometry []orb.Point
 	Highway  string
 	Access   string
 	Surface  string
@@ -64,9 +64,8 @@ func packWays(ways map[int64]*overpass.Way) ([]byte, error) {
 	for _, w := range ways {
 		d.Ways[i].Geometry = make([][2]float32, len(w.Geometry))
 		for j, g := range w.Geometry {
-			pt := geo.NewPointFromDegrees(g.Lat, g.Lon)
-			d.Ways[i].Geometry[j][0] = float32(pt.Lat)
-			d.Ways[i].Geometry[j][1] = float32(pt.Lon)
+			d.Ways[i].Geometry[j][0] = float32(g.Lat)
+			d.Ways[i].Geometry[j][1] = float32(g.Lon)
 		}
 
 		packTag := func(tag string, known *[]string) uint8 {
@@ -98,10 +97,10 @@ func unpackWays(data []byte) ([]*way, error) {
 
 	ways := make([]*way, len(d.Ways))
 	for i, w := range d.Ways {
-		ways[i] = &way{Geometry: make([]geo.Point, len(w.Geometry))}
+		ways[i] = &way{Geometry: make([]orb.Point, len(w.Geometry))}
 		for j, p := range w.Geometry {
-			ways[i].Geometry[j].Lat = float64(p[0])
-			ways[i].Geometry[j].Lon = float64(p[1])
+			ways[i].Geometry[j][1] = float64(p[0])
+			ways[i].Geometry[j][0] = float64(p[1])
 		}
 
 		if w.Highway < math.MaxUint8 {

@@ -13,6 +13,7 @@ require (
 	github.com/kettek/apng v0.0.0-20220823221153-ff692776a607
 	github.com/llehouerou/go-tcx v0.0.0-20161119054955-2b6af946ac47
 	github.com/lucasb-eyer/go-colorful v1.2.0
+	github.com/paulmach/orb v0.11.1
 	github.com/serjvanilla/go-overpass v0.0.0-20220918094045-58606372f808
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
