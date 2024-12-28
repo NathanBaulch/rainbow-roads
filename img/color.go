@@ -77,7 +77,6 @@ func (c *ColorGradient) Parse(str string) error {
 				e.Color, _ = colorful.MakeColor(col)
 			}
 		}
-		i++
 	}
 
 	return nil

@@ -29,14 +29,14 @@ func osmLookup(query string) ([]*way, error) {
 	h := fnv.New64()
 	_, _ = h.Write([]byte(query))
 	name := path.Join(os.TempDir(), "rainbow-roads")
-	if err := os.MkdirAll(name, 777); err != nil {
+	if err := os.MkdirAll(name, 0o777); err != nil {
 		return nil, err
 	}
 	name = path.Join(name, big.NewInt(0).SetBytes(h.Sum(nil)).Text(62))
 
 	if f, err := os.Stat(name); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return nil, err
-	} else if err == nil && time.Now().Sub(f.ModTime()) < ttl {
+	} else if err == nil && time.Since(f.ModTime()) < ttl {
 		if data, err := os.ReadFile(name); err != nil {
 			log.Println("WARN:", err)
 		} else if ways, err := unpackWays(data); err != nil {
@@ -50,7 +50,7 @@ func osmLookup(query string) ([]*way, error) {
 		return nil, err
 	} else if data, err := packWays(res.Ways); err != nil {
 		return nil, err
-	} else if err := os.WriteFile(name, data, 777); err != nil {
+	} else if err := os.WriteFile(name, data, 0o777); err != nil {
 		return nil, err
 	} else {
 		return unpackWays(data)

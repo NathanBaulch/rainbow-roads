@@ -27,21 +27,3 @@ func main() {
 		os.Exit(1)
 	}
 }
-
-/* TODO
-- quiet mode flag
-- update README
-- decide progress bars
-- cmd
-  - export
-  - heatmap
-  - blocks
-- alternative region shapes
-  - geo
-	- circle
-	- rect
-	- polygon
-  - named
-- "projects" with saved settings
-- env vars?
-*/

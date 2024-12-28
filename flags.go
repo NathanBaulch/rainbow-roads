@@ -37,7 +37,7 @@ func filterFlagSet(selector *parse.Selector) *pflag.FlagSet {
 }
 
 func flagError(name string, value any, reason string) error {
-	return fmt.Errorf("invalid value %q for flag --%s: %s\n", value, name, reason)
+	return fmt.Errorf("invalid value %q for flag --%s: %s", value, name, reason)
 }
 
 type ColorsFlag img.ColorGradient
@@ -219,7 +219,7 @@ func (c *CircleFlag) Set(str string) error {
 	} else {
 		*c = CircleFlag{
 			Origin: geo.NewPointFromDegrees(lat, lon),
-			Radius: 100,
+			Radius: 1000,
 		}
 		if len(parts) == 3 {
 			if c.Radius, err = parseDistance(parts[2]); err != nil {

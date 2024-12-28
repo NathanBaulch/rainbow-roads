@@ -3,6 +3,7 @@ package parse
 import (
 	"errors"
 	"io"
+	"strings"
 
 	"github.com/NathanBaulch/rainbow-roads/geo"
 	"github.com/tormoder/fit"
@@ -18,7 +19,12 @@ func parseFIT(r io.Reader, selector *Selector) ([]*Activity, error) {
 		return nil, err
 	}
 
-	if a, err := f.Activity(); err != nil || len(a.Records) == 0 {
+	if a, err := f.Activity(); err != nil {
+		if strings.HasPrefix(err.Error(), "fit file type is ") {
+			return nil, nil
+		}
+		return nil, err
+	} else if len(a.Records) == 0 {
 		return nil, nil
 	} else {
 		act := &Activity{

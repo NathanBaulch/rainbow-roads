@@ -176,7 +176,6 @@ func renderStep() error {
 	wg := &sync.WaitGroup{}
 	wg.Add(int(o.Frames))
 	for f := uint(0); f < o.Frames; f++ {
-		f := f
 		go func() {
 			fpc := float64(f+1) / float64(o.Frames)
 			gp := &glowPlotter{images[f]}

@@ -25,7 +25,6 @@ func Parse(files []*scan.File, selector *Selector) ([]*Activity, *Stats, error) 
 		err  error
 	}, len(files))
 	for i := range files {
-		i := i
 		go func() {
 			defer wg.Done()
 			var parser func(io.Reader, *Selector) ([]*Activity, error)

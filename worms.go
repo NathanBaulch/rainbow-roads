@@ -16,7 +16,7 @@ var (
 	wormsCmd = &cobra.Command{
 		Use:   "worms",
 		Short: "Animate exercise activities",
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRunE: func(*cobra.Command, []string) error {
 			if wormsOpts.Frames == 0 {
 				return flagError("frames", wormsOpts.Frames, "must be positive")
 			}

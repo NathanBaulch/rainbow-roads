@@ -16,7 +16,7 @@ var (
 	paintCmd = &cobra.Command{
 		Use:   "paint",
 		Short: "Track coverage in a region of interest",
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRunE: func(*cobra.Command, []string) error {
 			if paintOpts.Width == 0 {
 				return flagError("width", paintOpts.Width, "must be positive")
 			}
