@@ -40,12 +40,13 @@ var (
 	pendSecCol = colornames.Darkred
 	actCol     = colornames.Blue
 	queryExpr  = "is_tag(highway)" +
-		" and highway not in ['proposed','corridor','construction','footway','steps','busway','elevator','services']" +
+		" and highway not in ['proposed','corridor','construction','steps','busway','elevator','services']" +
 		" and service not in ['driveway','parking_aisle']" +
+		" and access not in ['private','customers','no']" +
+		" and tunnel not in ['building_passage','culvert','yes']" +
 		" and area != 'yes'"
 	primaryExpr = mustCompile(
 		"highway in ['cycleway','primary','residential','secondary','tertiary','trunk','living_street','unclassified']"+
-			" and access not in ['private','customers','no']"+
 			" and surface not in ['cobblestone','sett']", expr.AsBool())
 )
 
