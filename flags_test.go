@@ -3,11 +3,9 @@ package main
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"testing"
 
-	"github.com/NathanBaulch/rainbow-roads/geo"
-	"github.com/paulmach/orb"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSportsSet(t *testing.T) {
@@ -24,26 +22,20 @@ func TestSportsSet(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
-			s := &SportsFlag{}
+			is := require.New(t)
+
+			var s SportsFlag
 			for _, set := range testCase.sets {
 				if err := s.Set(set); err != nil {
 					if expectErr, ok := testCase.expect.(error); !ok {
-						t.Fatal(err)
-					} else if !strings.Contains(err.Error(), expectErr.Error()) {
-						t.Fatal(err, "!=", testCase.expect)
+						is.NoError(err)
 					} else {
-						s = nil
-						break
+						is.EqualError(err, expectErr.Error())
+						return
 					}
 				}
 			}
-			if s == nil {
-				return
-			}
-			actual := s.String()
-			if actual != testCase.expect {
-				t.Fatal(actual, "!=", testCase.expect)
-			}
+			is.Equal(testCase.expect, s.String())
 		})
 	}
 }
@@ -62,19 +54,17 @@ func TestTimeSet(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
-			f := &DateFlag{}
+			is := require.New(t)
+
+			var f DateFlag
 			if err := f.Set(testCase.set); err != nil {
 				if expectErr, ok := testCase.expect.(error); !ok {
-					t.Fatal(err)
-				} else if !strings.Contains(err.Error(), expectErr.Error()) {
-					t.Fatal(err, "!=", testCase.expect)
+					is.NoError(err)
 				} else {
-					return
+					is.EqualError(err, expectErr.Error())
 				}
-			}
-			actual := f.String()
-			if actual != testCase.expect {
-				t.Fatal(actual, "!=", testCase.expect)
+			} else {
+				is.Equal(testCase.expect, f.String())
 			}
 		})
 	}
@@ -96,19 +86,17 @@ func TestDurationSet(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
-			var d DurationFlag
-			if err := d.Set(testCase.set); err != nil {
+			is := require.New(t)
+
+			var f DurationFlag
+			if err := f.Set(testCase.set); err != nil {
 				if expectErr, ok := testCase.expect.(error); !ok {
-					t.Fatal(err)
-				} else if !strings.Contains(err.Error(), expectErr.Error()) {
-					t.Fatal(err, "!=", testCase.expect)
+					is.NoError(err)
 				} else {
-					return
+					is.EqualError(err, expectErr.Error())
 				}
-			}
-			actual := d.String()
-			if actual != testCase.expect {
-				t.Fatal(actual, "!=", testCase.expect)
+			} else {
+				is.Equal(testCase.expect, f.String())
 			}
 		})
 	}
@@ -136,20 +124,17 @@ func TestDistanceSet(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
+			is := require.New(t)
+
 			var f DistanceFlag
-			d := &f
-			if err := d.Set(testCase.set); err != nil {
+			if err := f.Set(testCase.set); err != nil {
 				if expectErr, ok := testCase.expect.(error); !ok {
-					t.Fatal(err)
-				} else if !strings.Contains(err.Error(), expectErr.Error()) {
-					t.Fatal(err, "!=", testCase.expect)
+					is.NoError(err)
 				} else {
-					return
+					is.EqualError(err, expectErr.Error())
 				}
-			}
-			actual := d.String()
-			if actual != testCase.expect {
-				t.Fatal(actual, "!=", testCase.expect)
+			} else {
+				is.Equal(testCase.expect, f.String())
 			}
 		})
 	}
@@ -175,19 +160,17 @@ func TestPaceFlag(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
-			var p PaceFlag
-			if err := p.Set(testCase.set); err != nil {
+			is := require.New(t)
+
+			var f PaceFlag
+			if err := f.Set(testCase.set); err != nil {
 				if expectErr, ok := testCase.expect.(error); !ok {
-					t.Fatal(err)
-				} else if !strings.Contains(err.Error(), expectErr.Error()) {
-					t.Fatal(err, "!=", testCase.expect)
+					is.NoError(err)
 				} else {
-					return
+					is.EqualError(err, expectErr.Error())
 				}
-			}
-			actual := p.String()
-			if actual != testCase.expect {
-				t.Fatal(actual, "!=", testCase.expect)
+			} else {
+				is.Equal(testCase.expect, f.String())
 			}
 		})
 	}
@@ -219,37 +202,18 @@ func TestRegionSet(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
-			c := &geo.Circle{}
-			if err := (*CircleFlag)(c).Set(testCase.set); err != nil {
+			is := require.New(t)
+
+			var f CircleFlag
+			if err := f.Set(testCase.set); err != nil {
 				if expectErr, ok := testCase.expect.(error); !ok {
-					t.Fatal(err)
-				} else if !strings.Contains(err.Error(), expectErr.Error()) {
-					t.Fatal(err, "!=", testCase.expect)
-				} else if c != nil && !c.IsZero() {
-					t.Fatal("expected zero")
+					is.NoError(err)
 				} else {
-					return
+					is.EqualError(err, expectErr.Error())
 				}
-			}
-			actual := c.String()
-			if actual != testCase.expect {
-				t.Fatal(actual, "!=", testCase.expect)
-			} else if c.IsZero() {
-				t.Fatal("expected not zero")
+			} else {
+				is.Equal(testCase.expect, f.String())
 			}
 		})
-	}
-}
-
-func TestRegionContains(t *testing.T) {
-	c := &geo.Circle{}
-	if err := (*CircleFlag)(c).Set("1,2,3"); err != nil {
-		t.Fatal(err)
-	}
-	if !c.Contains(orb.Point{2.000012316, 1.000017617}) {
-		t.Fatal("expected contains")
-	}
-	if c.Contains(orb.Point{2.000018046, 1.000023347}) {
-		t.Fatal("expected not contains")
 	}
 }

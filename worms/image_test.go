@@ -6,9 +6,13 @@ import (
 	"image"
 	"image/color"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestImageOptimizeFrames(t *testing.T) {
+	is := require.New(t)
+
 	rect := image.Rect(0, 0, 3, 3)
 	pal := color.Palette([]color.Color{color.Black, color.White, color.Transparent})
 	ims := make([]*image.Paletted, 7)
@@ -34,45 +38,35 @@ func TestImageOptimizeFrames(t *testing.T) {
 		{size: image.Rect(0, 0, 3, 2), pix: []byte{2, 2, 1, 1, 2, 2, 2, 2, 2}},
 	}
 	for i, expect := range expects {
-		if ims[i].Rect != expect.size {
-			t.Fatal("unexpected frame", i, "size: ", ims[i].Rect, "!=", expect.size)
-		}
+		is.Equal(expect.size, ims[i].Rect)
 		pix := make([]uint8, -ims[i].PixOffset(0, 0))
 		for j := range pix {
 			pix[j] = 2
 		}
 		pix = append(pix, ims[i].Pix...)
-		if !bytes.Equal(pix, expect.pix) {
-			t.Fatal("unexpected frame", i, "pixels: ", pix, "!=", expect.pix)
-		}
+		is.Equal(expect.pix, pix)
 	}
 }
 
 func TestImageGifWriter(t *testing.T) {
+	is := require.New(t)
+
 	b := &bytes.Buffer{}
 	w := &gifWriter{Writer: bufio.NewWriter(b), Comment: "foo"}
-	if n, err := w.Write([]byte{0x21, 0xff, 0x0b}); err != nil {
-		t.Fatal(err)
-	} else if n != 10 {
-		t.Fatal("number of bytes written:", n, "!=", 10)
-	}
-	if err := w.Flush(); err != nil {
-		t.Fatal(err)
-	}
-	if !bytes.Contains(b.Bytes(), []byte("foo")) {
-		t.Fatal("metadata text not found")
-	}
+	n, err := w.Write([]byte{0x21, 0xff, 0x0b})
+	is.NoError(err)
+	is.Equal(10, n)
+	is.NoError(w.Flush())
+	is.True(bytes.Contains(b.Bytes(), []byte("foo")))
 }
 
 func TestImagePngWriter(t *testing.T) {
+	is := require.New(t)
+
 	b := &bytes.Buffer{}
 	w := &pngWriter{Writer: b, Text: "foo"}
-	if n, err := w.Write([]byte("    IDAT")); err != nil {
-		t.Fatal(err)
-	} else if n != 23 {
-		t.Fatal("number of bytes written:", n, "!=", 23)
-	}
-	if !bytes.Contains(b.Bytes(), []byte("foo")) {
-		t.Fatal("metadata text not found")
-	}
+	n, err := w.Write([]byte("    IDAT"))
+	is.NoError(err)
+	is.Equal(23, n)
+	is.True(bytes.Contains(b.Bytes(), []byte("foo")))
 }

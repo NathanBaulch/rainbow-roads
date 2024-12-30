@@ -3,10 +3,10 @@ package img
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/lucasb-eyer/go-colorful"
+	"github.com/stretchr/testify/require"
 )
 
 func TestColorGradientParse(t *testing.T) {
@@ -37,29 +37,28 @@ func TestColorGradientParse(t *testing.T) {
 
 	for i, testCase := range testCases {
 		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
+			is := require.New(t)
+
 			g := &ColorGradient{}
 			if err := g.Parse(testCase.set); err != nil {
 				if expectErr, ok := testCase.expect.(error); !ok {
-					t.Fatal(err)
-				} else if !strings.Contains(err.Error(), expectErr.Error()) {
-					t.Fatal(err, "!=", testCase.expect)
+					is.NoError(err)
 				} else {
-					return
+					is.EqualError(err, expectErr.Error())
 				}
-			}
-			actual := g.String()
-			if actual != testCase.expect {
-				t.Fatal(actual, "!=", testCase.expect)
+			} else {
+				is.Equal(testCase.expect, g.String())
 			}
 		})
 	}
 }
 
 func TestColorGradientColorAt(t *testing.T) {
+	is := require.New(t)
+
 	g := &ColorGradient{}
-	if err := g.Parse("#fff,#ccc,#888,#444,#222,#000"); err != nil {
-		t.Fatal(err)
-	}
+	is.NoError(g.Parse("#fff,#ccc,#888,#444,#222,#000"))
+
 	for p, expect := range map[float64]string{
 		0.0: "#ffffff",
 		0.1: "#e5e5e5",
@@ -73,9 +72,6 @@ func TestColorGradientColorAt(t *testing.T) {
 		0.9: "#151515",
 		1.0: "#000000",
 	} {
-		actual := g.GetColorAt(p).(colorful.Color).Hex()
-		if actual != expect {
-			t.Fatal("palette color at ", p, ":", actual, "!=", expect)
-		}
+		is.Equal(expect, g.GetColorAt(p).(colorful.Color).Hex())
 	}
 }

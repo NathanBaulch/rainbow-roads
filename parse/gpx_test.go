@@ -3,10 +3,14 @@ package parse
 import (
 	"bytes"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestGPXStravaTypeCodes(t *testing.T) {
-	if acts, err := parseGPX(bytes.NewBufferString(`
+	is := require.New(t)
+
+	acts, err := parseGPX(bytes.NewBufferString(`
 		<gpx creator="StravaGPX iPhone">
 		  <trk>
 		    <type>1</type>
@@ -30,9 +34,7 @@ func TestGPXStravaTypeCodes(t *testing.T) {
 		      </trkpt>
 		    </trkseg>
 		  </trk>
-		</gpx>`), &Selector{Sports: []string{"running"}}); err != nil {
-		t.Fatal(err)
-	} else if len(acts) != 1 {
-		t.Fatal("expected 1 activity")
-	}
+		</gpx>`), &Selector{Sports: []string{"running"}})
+	is.NoError(err)
+	is.Len(acts, 1)
 }

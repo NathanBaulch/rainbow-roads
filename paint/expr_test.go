@@ -6,6 +6,7 @@ import (
 
 	"github.com/expr-lang/expr/ast"
 	"github.com/expr-lang/expr/parser"
+	"github.com/stretchr/testify/require"
 )
 
 func TestExpandInArray(t *testing.T) {
@@ -20,21 +21,15 @@ func TestExpandInArray(t *testing.T) {
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
+			is := require.New(t)
+
 			gotT, err := parser.Parse(tc.input)
-			if err != nil {
-				t.Fatal(err)
-			}
+			is.NoError(err)
 			ast.Walk(&gotT.Node, &expandInArray{})
 			wantT, err := parser.Parse(tc.want)
-			if err != nil {
-				t.Fatal(err)
-			}
+			is.NoError(err)
 
-			got := ast.Dump(gotT.Node)
-			want := ast.Dump(wantT.Node)
-			if got != want {
-				t.Fatalf("%s != %s", got, want)
-			}
+			is.Equal(ast.Dump(wantT.Node), ast.Dump(gotT.Node))
 		})
 	}
 }
@@ -48,21 +43,15 @@ func TestExpandInRange(t *testing.T) {
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
+			is := require.New(t)
+
 			gotT, err := parser.Parse(tc.input)
-			if err != nil {
-				t.Fatal(err)
-			}
+			is.NoError(err)
 			ast.Walk(&gotT.Node, &expandInRange{})
 			wantT, err := parser.Parse(tc.want)
-			if err != nil {
-				t.Fatal(err)
-			}
+			is.NoError(err)
 
-			got := ast.Dump(gotT.Node)
-			want := ast.Dump(wantT.Node)
-			if got != want {
-				t.Fatalf("%s != %s", got, want)
-			}
+			is.Equal(ast.Dump(wantT.Node), ast.Dump(gotT.Node))
 		})
 	}
 }
@@ -83,21 +72,15 @@ func TestDistributeAndFoldNot(t *testing.T) {
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
+			is := require.New(t)
+
 			gotT, err := parser.Parse(tc.input)
-			if err != nil {
-				t.Fatal(err)
-			}
+			is.NoError(err)
 			Walk(&gotT.Node, &distributeAndFoldNot{})
 			wantT, err := parser.Parse(tc.want)
-			if err != nil {
-				t.Fatal(err)
-			}
+			is.NoError(err)
 
-			got := ast.Dump(gotT.Node)
-			want := ast.Dump(wantT.Node)
-			if got != want {
-				t.Fatalf("%s != %s", got, want)
-			}
+			is.Equal(ast.Dump(wantT.Node), ast.Dump(gotT.Node))
 		})
 	}
 }
@@ -121,21 +104,15 @@ func TestDNF(t *testing.T) {
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
+			is := require.New(t)
+
 			gotT, err := parser.Parse(tc.input)
-			if err != nil {
-				t.Fatal(err)
-			}
+			is.NoError(err)
 			toDNF(&gotT.Node)
 			wantT, err := parser.Parse(tc.want)
-			if err != nil {
-				t.Fatal(err)
-			}
+			is.NoError(err)
 
-			got := ast.Dump(gotT.Node)
-			want := ast.Dump(wantT.Node)
-			if got != want {
-				t.Fatalf("%s != %s", got, want)
-			}
+			is.Equal(ast.Dump(wantT.Node), ast.Dump(gotT.Node))
 		})
 	}
 }

@@ -17,6 +17,7 @@ require (
 	github.com/serjvanilla/go-overpass v0.0.0-20220918094045-58606372f808
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
+	github.com/stretchr/testify v1.10.0
 	github.com/tkrajina/gpxgo v1.4.0
 	github.com/tormoder/fit v0.15.0
 	github.com/vmihailenco/msgpack/v5 v5.4.1
@@ -30,18 +31,21 @@ require (
 	github.com/Knetic/govaluate v3.0.0+incompatible // indirect
 	github.com/bcicen/bfstree v1.0.0 // indirect
 	github.com/client9/misspell v0.3.4 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/gordonklaus/ineffassign v0.1.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kisielk/errcheck v1.8.0 // indirect
 	github.com/mdempsky/unconvert v0.0.0-20241127004111-db6ad295e1ce // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20241217172543-b2144cdd0a67 // indirect
 	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/tools v0.28.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 	honnef.co/go/tools v0.5.1 // indirect
 	mvdan.cc/gofumpt v0.7.0 // indirect
 )

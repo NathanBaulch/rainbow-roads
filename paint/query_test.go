@@ -7,6 +7,7 @@ import (
 
 	"github.com/NathanBaulch/rainbow-roads/geo"
 	"github.com/paulmach/orb"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBuildQuery(t *testing.T) {
@@ -21,14 +22,12 @@ func TestBuildQuery(t *testing.T) {
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
-			got, err := buildQuery(geo.Circle{Origin: tc.origin, Radius: tc.radius}, tc.filter)
-			if err != nil {
-				t.Fatal(err)
-			}
+			is := require.New(t)
 
-			if got != tc.want {
-				t.Fatalf("%s != %s", got, tc.want)
-			}
+			got, err := buildQuery(geo.Circle{Origin: tc.origin, Radius: tc.radius}, tc.filter)
+			is.NoError(err)
+
+			is.Equal(tc.want, got)
 		})
 	}
 }
@@ -81,15 +80,12 @@ func TestBuildCriteria(t *testing.T) {
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
-			crits, err := buildCriteria(tc.input)
-			if err != nil {
-				t.Fatal(err)
-			}
+			is := require.New(t)
 
-			got := strings.Join(crits, ";")
-			if got != tc.want {
-				t.Fatalf("%s != %s", got, tc.want)
-			}
+			crits, err := buildCriteria(tc.input)
+			is.NoError(err)
+
+			is.Equal(tc.want, strings.Join(crits, ";"))
 		})
 	}
 }
@@ -106,11 +102,10 @@ func TestBuildCriteriaUnsupported(t *testing.T) {
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
-			if res, err := buildCriteria(tc.input); err == nil {
-				t.Fatalf("unexpected success: %s", res)
-			} else if err.Error() != tc.err {
-				t.Fatalf("%s != %s", err.Error(), tc.err)
-			}
+			is := require.New(t)
+
+			_, err := buildCriteria(tc.input)
+			is.EqualError(err, tc.err)
 		})
 	}
 }

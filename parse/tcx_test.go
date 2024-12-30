@@ -3,10 +3,14 @@ package parse
 import (
 	"bytes"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestTCXNoPosition(t *testing.T) {
-	if acts, err := parseTCX(bytes.NewBufferString(`
+	is := require.New(t)
+
+	acts, err := parseTCX(bytes.NewBufferString(`
 		<TrainingCenterDatabase>
 		  <Activities>
 		    <Activity>
@@ -19,9 +23,7 @@ func TestTCXNoPosition(t *testing.T) {
 		      </Lap>
 		    </Activity>
 		  </Activities>
-		</TrainingCenterDatabase>`), &Selector{}); err != nil {
-		t.Fatal(err)
-	} else if len(acts) > 0 {
-		t.Fatal("expected no activities")
-	}
+		</TrainingCenterDatabase>`), &Selector{})
+	is.NoError(err)
+	is.Empty(acts)
 }
