@@ -56,7 +56,7 @@ type Options struct {
 	Input       []string
 	Output      string
 	Width       uint
-	Region      geo.Circle
+	Region      geo.Geometry
 	NoWatermark bool
 	Selector    parse.Selector
 }
@@ -125,9 +125,12 @@ func fetchStep() error {
 
 func renderStep() error {
 	proj := project.WGS84.ToMercator
-	origin := project.Point(o.Region.Origin, proj)
-	scale := math.Cos(geo.DegreesToRadians(o.Region.Origin.Lat())) * 0.9 * float64(o.Width) / (2 * o.Region.Radius)
+	bound := o.Region.Bound()
+	origin := bound.Center()
+	scale := math.Cos(geo.DegreesToRadians(origin.Lat())) * 0.9 * float64(o.Width) / geo.BoundWidth(bound)
+	origin = project.Point(origin, proj)
 	offset := float64(o.Width) / 2
+	circle, _ := o.Region.(geo.Circle)
 
 	drawLine := func(gc *gg.Context, pt orb.Point) {
 		pt = project.Point(pt, proj)
@@ -194,7 +197,15 @@ func renderStep() error {
 	maskGC.SetColor(color.Transparent)
 	maskGC.Clear()
 	maskGC.SetColor(color.Black)
-	maskGC.DrawCircle(offset, offset, 0.9*float64(o.Width)/2)
+	if circle.Radius != 0 {
+		maskGC.DrawCircle(offset, offset, 0.9*float64(o.Width)/2)
+	} else {
+		maskGC.NewSubPath()
+		for _, pt := range o.Region.Ring() {
+			drawLine(maskGC, pt)
+		}
+		maskGC.ClosePath()
+	}
 	maskGC.Fill()
 	_ = gc.SetMask(maskGC.AsMask())
 	drawWays(true, pendPriCol)
@@ -203,7 +214,15 @@ func renderStep() error {
 	maskGC.SetColor(color.Transparent)
 	maskGC.Clear()
 	maskGC.SetColor(color.Black)
-	maskGC.DrawCircle(offset, offset, 0.9*float64(o.Width)/2)
+	if circle.Radius != 0 {
+		maskGC.DrawCircle(offset, offset, 0.9*float64(o.Width)/2)
+	} else {
+		maskGC.NewSubPath()
+		for _, pt := range o.Region.Ring() {
+			drawLine(maskGC, pt)
+		}
+		maskGC.ClosePath()
+	}
 	maskGC.Fill()
 	_ = gc.SetMask(maskGC.AsMask())
 	drawWays(true, donePriCol)

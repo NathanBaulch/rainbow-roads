@@ -73,7 +73,7 @@ func Parse(files []*scan.File, selector *Selector) ([]*Activity, *Stats, error) 
 
 	for i := len(activities) - 1; i >= 0; i-- {
 		act := activities[i]
-		include := selector.PassesThrough.IsZero()
+		include := selector.PassesThrough == nil
 		exclude := len(act.Records) == 0
 		for j, r := range act.Records {
 			if !selector.Bounded(r.Position) {
@@ -181,7 +181,7 @@ type Selector struct {
 	MinDuration, MaxDuration                       time.Duration
 	MinDistance, MaxDistance                       float64
 	MinPace, MaxPace                               time.Duration
-	BoundedBy, StartsNear, EndsNear, PassesThrough geo.Circle
+	BoundedBy, StartsNear, EndsNear, PassesThrough geo.Geometry
 }
 
 func (s *Selector) Sport(sport string) bool {
@@ -212,19 +212,19 @@ func (s *Selector) Pace(duration time.Duration, distance float64) bool {
 }
 
 func (s *Selector) Bounded(pt orb.Point) bool {
-	return s.BoundedBy.IsZero() || s.BoundedBy.Contains(pt)
+	return s.BoundedBy == nil || s.BoundedBy.Contains(pt)
 }
 
 func (s *Selector) Starts(pt orb.Point) bool {
-	return s.StartsNear.IsZero() || s.StartsNear.Contains(pt)
+	return s.StartsNear == nil || s.StartsNear.Contains(pt)
 }
 
 func (s *Selector) Ends(pt orb.Point) bool {
-	return s.EndsNear.IsZero() || s.EndsNear.Contains(pt)
+	return s.EndsNear == nil || s.EndsNear.Contains(pt)
 }
 
 func (s *Selector) Passes(pt orb.Point) bool {
-	return s.PassesThrough.IsZero() || s.PassesThrough.Contains(pt)
+	return s.PassesThrough == nil || s.PassesThrough.Contains(pt)
 }
 
 type Activity struct {

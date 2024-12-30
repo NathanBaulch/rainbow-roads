@@ -55,10 +55,10 @@ Filtering flags:
       --max_distance distance   greatest distance of included activities, eg 10mi
       --min_pace pace           slowest pace of included activities, eg 8km/h
       --max_pace pace           fastest pace of included activities, eg 10min/mi
-      --bounded_by circle       region that activities must be fully contained within, eg -37.8,144.9,10km
-      --starts_near circle      region that activities must start from, eg 51.53,-0.21,1km
-      --ends_near circle        region that activities must end in, eg 30.06,31.22,1km
-      --passes_through circle   region that activities must pass through, eg 40.69,-74.12,10mi
+      --bounded_by geometry     region that activities must be fully contained within, eg circle(-37.8,144.9,10km)
+      --starts_near geometry    region that activities must start from, eg circle(51.53,-0.21,1km)
+      --ends_near geometry      region that activities must end in, eg circle(30.06,31.22,1km)
+      --passes_through geometry region that activities must pass through, eg circle(40.69,-74.12,10mi)
 
 Rendering flags:
       --frames uint        number of animation frames (default 200)

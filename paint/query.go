@@ -24,15 +24,27 @@ func init() {
 	builtin.Names[0] = "is_tag"
 }
 
-func buildQuery(region geo.Circle, filter string) (string, error) {
+func buildQuery(region geo.Geometry, filter string) (string, error) {
 	if crits, err := buildCriteria(filter); err != nil {
 		return "", fmt.Errorf("overpass query error: %w", err)
 	} else {
-		prefix := fmt.Sprintf("way(around:%s,%s,%s)",
-			conv.FormatFloat(region.Radius),
-			conv.FormatFloat(region.Origin.Lat()),
-			conv.FormatFloat(region.Origin.Lon()),
-		)
+		var prefix string
+		if c, ok := region.(geo.Circle); ok {
+			prefix = fmt.Sprintf("way(around:%s,%s,%s)",
+				conv.FormatFloat(c.Radius),
+				conv.FormatFloat(c.Origin.Lat()),
+				conv.FormatFloat(c.Origin.Lon()),
+			)
+		} else {
+			r := region.Ring()
+			parts := make([]string, 0, len(r)*3+2)
+			parts = append(parts, `way(poly:"`)
+			for _, pt := range r {
+				parts = append(parts, conv.FormatFloat(pt.Lat()), " ", conv.FormatFloat(pt.Lon()))
+			}
+			parts = append(parts, `")`)
+			prefix = strings.Join(parts, "")
+		}
 		parts := make([]string, 0, len(crits)*3+2)
 		parts = append(parts, "[out:json];(")
 		for _, crit := range crits {

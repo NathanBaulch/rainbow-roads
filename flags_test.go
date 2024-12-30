@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/NathanBaulch/rainbow-roads/geo"
 	"github.com/stretchr/testify/require"
 )
 
@@ -181,11 +182,17 @@ func TestRegionSet(t *testing.T) {
 		set    string
 		expect any
 	}{
-		{"1,2", "1,2,1000"},
-		{"1,2,3", "1,2,3"},
-		{"-10.10101,-20.20202,30.30303", "-10.10101,-20.20202,30.30303"},
-		{"1,2,3000ft", "1,2,914.4"},
-		{"1,2,9e9", "1,2,9000000000"},
+		{"1,2", "circle(1,2,1000)"},
+		{"1,2,3", "circle(1,2,3)"},
+		{"-10.10101,-20.20202,30.30303", "circle(-10.10101,-20.20202,30.30303)"},
+		{"1,2,3000ft", "circle(1,2,914.4)"},
+		{"1,2,9e9", "circle(1,2,9000000000)"},
+		{"square(1,2)", "square(1,2,1000,0)"},
+		{"square(1,2,3)", "square(1,2,3,0)"},
+		{"square(-10.10101,-20.20202,30.30303)", "square(-10.10101,-20.20202,30.30303,0)"},
+		{"square(1,2,3000ft)", "square(1,2,914.4,0)"},
+		{"square(1,2,9e9)", "square(1,2,9000000000,0)"},
+		{"square(1,2,3,4)", "square(1,2,3,4)"},
 		{"", errors.New("unexpected empty value")},
 		{"1", errors.New("invalid number of parts")},
 		{"1,2,3,4", errors.New("invalid number of parts")},
@@ -204,7 +211,9 @@ func TestRegionSet(t *testing.T) {
 		t.Run(fmt.Sprintf("test case %d", i), func(t *testing.T) {
 			is := require.New(t)
 
-			var f CircleFlag
+			var g geo.Geometry
+			var f GeometryFlag
+			f.Geometry = &g
 			if err := f.Set(testCase.set); err != nil {
 				if expectErr, ok := testCase.expect.(error); !ok {
 					is.NoError(err)

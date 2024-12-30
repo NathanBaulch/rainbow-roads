@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"regexp"
 	"sort"
 	"strconv"
@@ -30,10 +31,10 @@ func filterFlagSet(selector *parse.Selector) *pflag.FlagSet {
 	fs.Var((*DistanceFlag)(&selector.MaxDistance), "max_distance", "greatest distance of included activities, eg 10mi")
 	fs.Var((*PaceFlag)(&selector.MinPace), "min_pace", "slowest pace of included activities, eg 8km/h")
 	fs.Var((*PaceFlag)(&selector.MaxPace), "max_pace", "fastest pace of included activities, eg 10min/mi")
-	fs.Var((*CircleFlag)(&selector.BoundedBy), "bounded_by", "region that activities must be fully contained within, eg -37.8,144.9,10km")
-	fs.Var((*CircleFlag)(&selector.StartsNear), "starts_near", "region that activities must start from, eg 51.53,-0.21,1km")
-	fs.Var((*CircleFlag)(&selector.EndsNear), "ends_near", "region that activities must end in, eg 30.06,31.22,1km")
-	fs.Var((*CircleFlag)(&selector.PassesThrough), "passes_through", "region that activities must pass through, eg 40.69,-74.12,10mi")
+	fs.Var(&GeometryFlag{Geometry: &selector.BoundedBy}, "bounded_by", "region that activities must be fully contained within, eg circle(-37.8,144.9,10km)")
+	fs.Var(&GeometryFlag{Geometry: &selector.StartsNear}, "starts_near", "region that activities must start from, eg circle(51.53,-0.21,1km)")
+	fs.Var(&GeometryFlag{Geometry: &selector.EndsNear}, "ends_near", "region that activities must end in, eg circle(30.06,31.22,1km)")
+	fs.Var(&GeometryFlag{Geometry: &selector.PassesThrough}, "passes_through", "region that activities must pass through, eg circle(40.69,-74.12,10mi)")
 	return fs
 }
 
@@ -197,16 +198,34 @@ func (p *PaceFlag) String() string {
 	return time.Duration(*p).String()
 }
 
-type CircleFlag geo.Circle
+type GeometryFlag struct{ Geometry *geo.Geometry }
 
-func (c *CircleFlag) Type() string {
-	return "circle"
+func (g *GeometryFlag) Type() string {
+	return "geometry"
 }
 
-func (c *CircleFlag) Set(str string) error {
+var geometryRE = regexp.MustCompile(`^(\w+)\((.*)\)$`)
+
+func (g *GeometryFlag) Set(str string) error {
 	if str == "" {
 		return errors.New("unexpected empty value")
 	}
+
+	if match := geometryRE.FindStringSubmatch(str); len(match) == 3 {
+		switch match[1] {
+		case "square":
+			return g.setSquare(match[2])
+		case "circle":
+			return g.setCircle(match[2])
+		default:
+			return fmt.Errorf("geometry %q not recognized", match[1])
+		}
+	} else {
+		return g.setCircle(str)
+	}
+}
+
+func (g *GeometryFlag) setCircle(str string) error {
 	if parts := strings.Split(str, ","); len(parts) < 2 || len(parts) > 3 {
 		return errors.New("invalid number of parts")
 	} else if lat, err := strconv.ParseFloat(parts[0], 64); err != nil {
@@ -218,24 +237,57 @@ func (c *CircleFlag) Set(str string) error {
 	} else if lon < -180 || lon > 180 {
 		return fmt.Errorf("longitude %q not within range", conv.FormatFloat(lon))
 	} else {
-		*c = CircleFlag{
-			Origin: orb.Point{lon, lat},
-			Radius: 1000,
-		}
+		radius := 1000.0
 		if len(parts) == 3 {
-			if c.Radius, err = parseDistance(parts[2]); err != nil {
+			if radius, err = parseDistance(parts[2]); err != nil {
 				return errors.New("radius " + err.Error())
 			}
 		}
+		*g.Geometry = geo.Circle{Origin: orb.Point{lon, lat}, Radius: radius}
 		return nil
 	}
 }
 
-func (c *CircleFlag) String() string {
-	if c == nil || geo.Circle(*c).IsZero() {
+func (g *GeometryFlag) setSquare(str string) error {
+	if parts := strings.Split(str, ","); len(parts) < 2 || len(parts) > 4 {
+		return errors.New("invalid number of parts")
+	} else if lat, err := strconv.ParseFloat(parts[0], 64); err != nil {
+		return fmt.Errorf("latitude %q not recognized", parts[0])
+	} else if lon, err := strconv.ParseFloat(parts[1], 64); err != nil {
+		return fmt.Errorf("longitude %q not recognized", parts[1])
+	} else if lat < -85 || lat > 85 {
+		return fmt.Errorf("latitude %q not within range", conv.FormatFloat(lat))
+	} else if lon < -180 || lon > 180 {
+		return fmt.Errorf("longitude %q not within range", conv.FormatFloat(lon))
+	} else {
+		size := 1000.0
+		if len(parts) >= 3 {
+			if size, err = parseDistance(parts[2]); err != nil {
+				return errors.New("size " + err.Error())
+			}
+		}
+		angle := 0.0
+		if len(parts) == 4 {
+			if angle, err = strconv.ParseFloat(parts[3], 64); err != nil {
+				return errors.New("angle " + err.Error())
+			}
+		}
+		*g.Geometry = geo.NewSquare(orb.Point{lon, lat}, size, angle)
+		return nil
+	}
+}
+
+func (g *GeometryFlag) String() string {
+	if g == nil {
 		return ""
 	}
-	return geo.Circle(*c).String()
+	if g.Geometry == nil {
+		return ""
+	}
+	if v := reflect.ValueOf(g.Geometry); v.Kind() == reflect.Ptr && v.Elem().IsNil() {
+		return ""
+	}
+	return (*g.Geometry).String()
 }
 
 var distanceRE = regexp.MustCompile(`^(.*\d)\s?(\w+)?$`)

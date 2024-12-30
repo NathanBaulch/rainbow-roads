@@ -33,7 +33,7 @@ func init() {
 	rootCmd.AddCommand(paintCmd)
 
 	general := &pflag.FlagSet{}
-	general.VarP((*CircleFlag)(&paintOpts.Region), "region", "r", "target region of interest, eg -37.8,144.9,10km")
+	general.VarP(&GeometryFlag{Geometry: &paintOpts.Region}, "region", "r", "target region of interest, eg circle(-37.8,144.9,10km)")
 	general.StringVarP(&paintOpts.Output, "output", "o", "out", "optional path of the generated file")
 	general.VisitAll(func(f *pflag.Flag) { paintCmd.Flags().Var(f.Value, f.Name, f.Usage) })
 	_ = paintCmd.MarkFlagRequired("region")
