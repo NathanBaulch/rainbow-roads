@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/paulmach/orb"
 	"github.com/tormoder/fit"
@@ -32,7 +33,10 @@ func parseFIT(r io.Reader, selector *Selector) ([]*Activity, error) {
 			Distance: a.Sessions[0].GetTotalDistanceScaled(),
 		}
 		r0, r1 := a.Records[0], a.Records[len(a.Records)-1]
-		dur := r1.Timestamp.Sub(r0.Timestamp)
+		dur := time.Duration(a.Activity.GetTotalTimerTimeScaled()) * time.Second
+		if dur == 0 {
+			dur = r1.Timestamp.Sub(r0.Timestamp)
+		}
 		if !selector.Sport(act.Sport) ||
 			!selector.Timestamp(r0.Timestamp, r1.Timestamp) ||
 			!selector.Duration(dur) ||

@@ -31,8 +31,6 @@ func parseTCX(r io.Reader, selector *Selector) ([]*Activity, error) {
 				continue
 			}
 
-			act.Distance += l.DistanceInMeters
-
 			for _, t := range l.Track {
 				if t.LatitudeInDegrees == 0 || t.LongitudeInDegrees == 0 {
 					continue
@@ -48,11 +46,14 @@ func parseTCX(r io.Reader, selector *Selector) ([]*Activity, error) {
 			}
 		}
 
-		dur := t1.Time.Sub(t0.Time)
+		dur := a.TotalDuration()
+		if dur == 0 {
+			dur = t1.Time.Sub(t0.Time)
+		}
 		if len(act.Records) == 0 ||
 			!selector.Timestamp(t0.Time, t1.Time) ||
 			!selector.Duration(dur) ||
-			!selector.Distance(act.Distance) ||
+			!selector.Distance(a.TotalDistance()) ||
 			!selector.Pace(dur, act.Distance) {
 			continue
 		}
